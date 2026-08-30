@@ -1,0 +1,142 @@
+<div class="chat-widget-container" id="chatWidget"
+    style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Lato', sans-serif;">
+    {% csrf_token %}
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow"
+        style="display: none; flex-direction: column; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); overflow: hidden; position: absolute; bottom: 80px; right: 0; border: 1px solid rgba(0,0,0,0.1);">
+        <div class="chat-header"
+            style="background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 18px;">🧁 BakeBot Assistant</h4>
+            <button onclick="toggleChat()"
+                style="background:none; border:none; color:white; cursor:pointer; font-size: 24px;">×</button>
+        </div>
+        <div class="chat-body" id="chatBody"
+            style="flex: 1; padding: 15px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px;">
+            <div class="message received"
+                style="align-self: flex-start; background: #e0e0e0; padding: 10px 15px; border-radius: 15px 15px 15px 0; max-width: 80%; font-size: 14px; line-height: 1.5;">
+                Hello! I'm BakeBot. 🤖<br>
+                {% if user.is_authenticated %}
+                {% if user.role == 'customer' %}
+                By the way, you can ask me about your <b>latest order</b>!
+                {% else %}
+                Ask me about <b>pending orders</b> or business stats.
+                {% endif %}
+                {% else %}
+                How can I help you today? (Login for more features!)
+                {% endif %}
+            </div>
+        </div>
+        <div class="chat-footer"
+            style="padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px;">
+            <input type="text" id="chatInput" placeholder="Ask about recipes, orders..."
+                style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none;">
+            <button onclick="sendMessage()"
+                style="background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">➤</button>
+        </div>
+    </div>
+
+    <!-- Floating Button -->
+    <div class="chat-bubble" onclick="toggleChat()" title="Chat with BakeBot"
+        style="width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(93, 67, 51, 0.3); transition: transform 0.3s ease;">
+        🧁
+    </div>
+</div>
+
+<script>
+    function toggleChat() {
+        const window = document.getElementById('chatWindow');
+        if (window.style.display === 'flex') {
+            window.style.display = 'none';
+        } else {
+            window.style.display = 'flex';
+            const chatBody = document.getElementById('chatBody');
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const chatBody = document.getElementById('chatBody');
+
+        // Create user message
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message sent';
+        msgDiv.style.alignSelf = 'flex-end';
+        msgDiv.style.background = 'var(--primary)';
+        msgDiv.style.color = 'white';
+        msgDiv.style.padding = '10px 15px';
+        msgDiv.style.borderRadius = '15px 15px 0 15px';
+        msgDiv.style.maxWidth = '80%';
+        msgDiv.style.fontSize = '14px';
+        msgDiv.textContent = text;
+
+        chatBody.appendChild(msgDiv);
+        input.value = '';
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        // Add loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message received loading';
+        loadingDiv.textContent = '...';
+        loadingDiv.style.alignSelf = 'flex-start';
+        loadingDiv.style.background = '#e0e0e0';
+        loadingDiv.style.padding = '10px 15px';
+        loadingDiv.style.borderRadius = '15px 15px 15px 0';
+        chatBody.appendChild(loadingDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const response = await fetch('/ai/bakebot/api/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await response.json();
+
+            // Remove loading
+            chatBody.removeChild(loadingDiv);
+
+            // Add bot response
+            const responseDiv = document.createElement('div');
+            responseDiv.className = 'message received';
+            responseDiv.style.alignSelf = 'flex-start';
+            responseDiv.style.background = '#e0e0e0';
+            responseDiv.style.padding = '10px 15px';
+            responseDiv.style.borderRadius = '15px 15px 15px 0';
+            responseDiv.style.maxWidth = '80%';
+            responseDiv.style.fontSize = '14px';
+            responseDiv.style.lineHeight = '1.5';
+            responseDiv.innerHTML = data.reply || "I'm having trouble connecting to the bakery right now.";
+
+            chatBody.appendChild(responseDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+        } catch (error) {
+            console.error('Error:', error);
+            chatBody.removeChild(loadingDiv);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message received';
+            errorDiv.textContent = "Sorry, I'm offline right now. 😔";
+            errorDiv.style.alignSelf = 'flex-start';
+            errorDiv.style.background = '#e0e0e0';
+            errorDiv.style.padding = '10px 15px';
+            errorDiv.style.borderRadius = '15px 15px 15px 0';
+            chatBody.appendChild(errorDiv);
+        }
+    }
+
+    // Handle Enter key
+    document.getElementById('chatInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>

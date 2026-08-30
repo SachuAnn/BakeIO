@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Invoice #{{ invoice.invoice_number }} - BakeIO{% endblock %}
+
+{% block extra_head %}
+<style>
+    .invoice-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 50px;
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 50px;
+        border-bottom: 2px solid #f8f9fa;
+        padding-bottom: 30px;
+    }
+
+    .invoice-meta {
+        text-align: right;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .status-paid {
+        background: #e3fcef;
+        color: #00875a;
+    }
+
+    .status-pending {
+        background: #fffae6;
+        color: #b78103;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 30px 0;
+    }
+
+    .invoice-table th {
+        text-align: left;
+        padding: 15px;
+        background: #f8f9fa;
+        color: #777;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+    }
+
+    .invoice-table td {
+        padding: 20px 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .total-section {
+        margin-left: auto;
+        width: 300px;
+        margin-top: 30px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+    }
+
+    .total-grand {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary);
+        border-top: 2px solid #eee;
+        padding-top: 15px;
+        margin-top: 10px;
+    }
+
+    @media print {
+
+        nav,
+        footer,
+        .no-print {
+            display: none !important;
+        }
+
+        body {
+            background: white;
+        }
+
+        .invoice-container {
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print mb-4">
+    <a href="/orders/" style="color: var(--secondary); font-weight: 600;">← Back to My Orders</a>
+</div>
+
+<div class="invoice-container">
+    <div class="invoice-header">
+        <div>
+            <h1 style="color: var(--primary); margin: 0; font-size: 2.5rem;">BAKEIO</h1>
+            <p style="color: #999; margin-top: 5px;">Fresh bakes, smarter choices.</p>
+        </div>
+        <div class="invoice-meta">
+            <h2 style="margin: 0;">INVOICE</h2>
+            <p style="color: #777; margin: 5px 0;">#{{ invoice.invoice_number }}</p>
+            <div
+                class="status-badge {% if order.status == 'delivered' or order.status == 'completed' %}status-paid{% else %}status-pending{% endif %}">
+                {{ order.status|title }}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 50px; margin-bottom: 40px;">
+        <div>
+            <h4 style="color: #bbb; text-transform: uppercase; font-size: 12px; margin-bottom: 15px;">Bill To:</h4>
+            <h3 style="margin: 0;">{{ order.customer.username }}</h3>
+            <p style="color: #666; font-size: 14px; margin-top: 5px;">
+                Customer ID: #{{ order.customer.id }}<br>
+                Order Reference: #{{ order.id }}
+            </p>
+        </div>
+        <div>
+            <h4 style="color: #bbb; text-transform: uppercase; font-size: 12px; margin-bottom: 15px;">Bakery Details:
+            </h4>
+            <h3 style="margin: 0;">{{ order.bakery.name }}</h3>
+            <p style="color: #666; font-size: 14px; margin-top: 5px;">
+                Date: {{ invoice.created_at|date:"M d, Y" }}<br>
+                Payment: {{ order.payment.method|default:"Online Payment" }}
+            </p>
+        </div>
+    </div>
+
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th>Item Description</th>
+                <th style="text-align: center;">Original</th>
+                <th style="text-align: center;">Price Paid</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>
+                    <h5 style="margin: 0; font-size: 1rem;">{{ item.product.name }}</h5>
+                    {% if item.original_price > item.price_at_purchase %}
+                    {% if item.product.offer %}
+                    <small style="color: var(--secondary); font-weight: 600;">Offer Applied:
+                        {{item.product.offer.title}}</small>
+                    {% else %}
+                    <small style="color: var(--secondary); font-weight: 600;">Special Price Applied</small>
+                    {% endif %}
+                    {% else %}
+                    <small style="color: #999;">Freshly baked by {{ order.bakery.name }}</small>
+                    {% endif %}
+                </td>
+                <td style="text-align: center; color: #999;">
+                    {% if item.original_price > item.price_at_purchase %}
+                    ₹{{ item.original_price }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td style="text-align: center; font-weight: 600;">₹{{ item.price_at_purchase }}</td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td style="text-align: right; font-weight: 700;">₹{{ item.total_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="total-row">
+            <span style="color: #777;">Order Subtotal</span>
+            <span style="font-weight: 600;">₹{{ order.payment.amount|add:order.total_savings }}</span>
+        </div>
+
+        {% if order.total_savings > 0 %}
+        <div class="total-row">
+            <span style="color: var(--secondary); font-weight: 600;">Total Savings</span>
+            <span style="color: var(--secondary); font-weight: 700;">-₹{{ order.total_savings }}</span>
+        </div>
+        {% endif %}
+
+        <div class="total-row">
+            <span style="color: #777;">Delivery Fee</span>
+            <span style="color: var(--secondary); font-weight: 600;">FREE</span>
+        </div>
+        <div class="total-row total-grand">
+            <span>Grand Total</span>
+            <span>₹{{ order.payment.amount }}</span>
+        </div>
+        {% if order.total_savings > 0 %}
+        <p style="text-align: right; color: var(--secondary); font-weight: 700; font-size: 14px; margin-top: 10px;">
+            You saved ₹{{ order.total_savings }} on this order! 🎉
+        </p>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 80px; padding-top: 30px; border-top: 1px solid #eee; text-align: center;">
+        <p style="color: #999; font-size: 14px;">Thank you for choosing BakeIO! We hope you enjoy your sweet treat.</p>
+        <p style="color: #ccc; font-size: 12px; margin-top: 10px;">This is a computer-generated invoice and doesn't
+            require a signature.</p>
+    </div>
+</div>
+
+<div class="text-center mt-4 no-print" style="display: flex; gap: 15px; justify-content: center;">
+    <button onclick="window.print()" class="btn"
+        style="padding: 12px 30px; display: flex; align-items: center; gap: 10px;">
+        <span>🖨️</span> Print Invoice
+    </button>
+    <a href="/orders/" class="btn btn-outline" style="padding: 12px 30px;">
+        Return to Orders
+    </a>
+</div>
+{% endblock %}

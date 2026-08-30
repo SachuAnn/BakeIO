@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with {{ room.bakery.name }} - BakeIO{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card" style="padding: 0; overflow: hidden; height: 600px; display: flex; flex-direction: column;">
+        <!-- Header -->
+        <div
+            style="padding: 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 24px;">🧁</div>
+                <div>
+                    <h3 style="color: white; margin: 0; font-family: 'Poppins', sans-serif;">{{ room.bakery.name }}</h3>
+                    <small style="opacity: 0.8;">Online Support</small>
+                </div>
+            </div>
+            <a href="{% url 'chat_rooms' %}" style="color: white; font-size: 24px;">&times;</a>
+        </div>
+
+        <!-- Messages Body -->
+        <div id="messageContainer"
+            style="flex: 1; padding: 30px; overflow-y: auto; background: #fdfdfd; display: flex; flex-direction: column; gap: 20px;">
+            {% for msg in chat_messages %}
+            <div class="message {% if msg.sender == user %}sent{% else %}received{% endif %}">
+                {{ msg.text }}
+                <div class="message-meta">
+                    {{ msg.timestamp|date:"H:i" }}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center" style="margin-top: 100px; color: #999;">
+                <div style="font-size: 3rem; margin-bottom: 20px;">👋</div>
+                <p>Start your conversation with <strong>{{ room.bakery.name }}</strong></p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Input Area -->
+        <form method="post"
+            style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 15px; background: white;">
+            {% csrf_token %}
+            <input type="text" name="message" placeholder="Type your message here..." required
+                style="flex: 1; margin-bottom: 0; border-radius: 50px; padding: 12px 25px; border: 1px solid #eee;">
+            <button type="submit" class="btn"
+                style="padding: 0; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                ➤
+            </button>
+        </form>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <a href="{% url 'chat_rooms' %}" style="color: #999;">← Back to Messages</a>
+    </div>
+</div>
+
+<script>
+    // Scroll to bottom
+    const container = document.getElementById('messageContainer');
+    container.scrollTop = container.scrollHeight;
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div
+    style="max-width: 500px; margin: 40px auto; border: 1px solid #ddd; border-radius: 15px; overflow: hidden; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+
+    <!-- Chat Header -->
+    <div style="background: #6c5ce7; color: white; padding: 15px; display: flex; align-items: center;">
+        <span style="font-size: 24px; margin-right: 10px;">🤖</span>
+        <div>
+            <h3 style="margin: 0;">BakeBot</h3>
+            <small style="opacity: 0.8;">Always online • AI Assistant</small>
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div id="chat-box"
+        style="height: 350px; overflow-y: auto; padding: 15px; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px;">
+        <!-- Welcome Message -->
+        <div
+            style="align-self: flex-start; background: #e1e1e1; padding: 10px 15px; border-radius: 15px 15px 15px 0; max-width: 80%;">
+            Hello! I'm BakeBot. 🧁<br>Ask me about your <b>orders</b>, <b>recipes</b>, or <b>prices</b>!
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div style="padding: 15px; background: white; border-top: 1px solid #eee; display: flex;">
+        <input type="text" id="user-input" placeholder="Type a message..."
+            style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none;">
+        <button onclick="sendMessage()"
+            style="margin-left: 10px; background: #6c5ce7; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer;">Send</button>
+    </div>
+
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const inputField = document.getElementById('user-input');
+
+    inputField.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") sendMessage();
+    });
+
+    function appendMessage(text, isUser) {
+        const msg = document.createElement('div');
+        msg.innerHTML = text;
+        msg.style.padding = "10px 15px";
+        msg.style.maxWidth = "80%";
+        msg.style.borderRadius = isUser ? "15px 15px 0 15px" : "15px 15px 15px 0";
+        msg.style.marginTop = "5px";
+        msg.style.alignSelf = isUser ? "flex-end" : "flex-start";
+        msg.style.background = isUser ? "#6c5ce7" : "#e1e1e1";
+        msg.style.color = isUser ? "white" : "black";
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendMessage() {
+        const text = inputField.value.trim();
+        if (!text) return;
+
+        appendMessage(text, true);
+        inputField.value = "";
+
+        // Show typing indicator logic would go here
+
+        fetch("{% url 'bakebot_api' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ message: text })
+        })
+            .then(res => res.json())
+            .then(data => {
+                setTimeout(() => {
+                    appendMessage(data.reply, false);
+                }, 500); // Fake delay
+            })
+            .catch(err => appendMessage("❌ Error: Could not reach BakeBot.", false));
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Price Predictor - BakeIO Smart Estimates{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 style="font-size: 3rem;">💰 Price <span style="color: var(--secondary);">Predictor</span></h1>
+    <p style="color: #666; max-width: 600px; margin: 10px auto;">
+        Get instant, data-driven cost estimates based on
+        real-time market trends across all partner bakeries.
+    </p>
+</div>
+
+<div style="max-width: 650px; margin: 0 auto;">
+    <div class="card" style="padding: 40px; border-top: 5px solid var(--secondary);">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Flavor -->
+            <div class="form-group">
+                <label><strong>🎂 Cake Type / Flavor</strong></label>
+                <input type="text"
+                       name="flavor"
+                       value="{{ params.flavor|default:'' }}"
+                       placeholder="e.g. Red Velvet, Chocolate Fudge"
+                       required>
+            </div>
+
+            <!-- Weight & Tiers -->
+            <div style="display: flex; gap: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    <label><strong>⚖️ Weight (kg)</strong></label>
+                    <input type="number"
+                           step="0.5"
+                           name="weight"
+                           value="{{ params.weight|default:1 }}"
+                           min="0.5"
+                           max="10">
+                </div>
+
+                <div class="form-group" style="flex: 1;">
+                    <label><strong>🏰 Tiers</strong></label>
+                    <input type="number"
+                           name="tiers"
+                           value="{{ params.tiers|default:1 }}"
+                           min="1"
+                           max="5">
+                </div>
+            </div>
+
+            <!-- Complexity & Occasion -->
+            <div style="display: flex; gap: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    <label><strong>🎨 Design Complexity</strong></label>
+                    <select name="complexity">
+
+                        <option value="minimal"
+                            {% if params.complexity|default:'' == 'minimal' %}
+                                selected
+                            {% endif %}>
+                            Simple / Minimalist
+                        </option>
+
+                        <option value="standard"
+                            {% if params.complexity|default:'standard' == 'standard' %}
+                                selected
+                            {% endif %}>
+                            Standard
+                        </option>
+
+                        <option value="intricate"
+                            {% if params.complexity|default:'' == 'intricate' %}
+                                selected
+                            {% endif %}>
+                            Intricate / 3D
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-group" style="flex: 1;">
+                    <label><strong>🎉 Occasion</strong></label>
+                    <select name="occasion">
+
+                        <option value="birthday"
+                            {% if params.occasion|default:'' == 'birthday' %}
+                                selected
+                            {% endif %}>
+                            Birthday
+                        </option>
+
+                        <option value="wedding"
+                            {% if params.occasion|default:'' == 'wedding' %}
+                                selected
+                            {% endif %}>
+                            Wedding
+                        </option>
+
+                        <option value="anniversary"
+                            {% if params.occasion|default:'' == 'anniversary' %}
+                                selected
+                            {% endif %}>
+                            Anniversary
+                        </option>
+
+                        <option value="other"
+                            {% if params.occasion|default:'other' == 'other' %}
+                                selected
+                            {% endif %}>
+                            Other
+                        </option>
+
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit"
+                    class="btn btn-secondary"
+                    style="width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 10px;">
+                🧾 Calculate Best Price
+            </button>
+        </form>
+
+        {% if price %}
+        <div style="margin-top: 40px; padding: 30px; background: #e6fffa;
+                   border: 1px solid #4ecdc466; border-radius: 15px; text-align: center;">
+
+            <p style="margin: 0; text-transform: uppercase; letter-spacing: 1px;
+                      font-size: 12px; color: #666; font-weight: 700;">
+                Suggested Budget
+            </p>
+
+            <h2 style="color: var(--secondary); font-size: 3rem; margin: 10px 0;">
+                ₹{{ price }}
+            </h2>
+
+            {% if market_data %}
+            <div style="display: inline-block; padding: 6px 15px; background: white;
+                       border-radius: 50px; font-size: 13px; color: #444;
+                       border: 1px solid #eee;">
+                📊 {{ market_data.message }}
+            </div>
+            {% endif %}
+
+            <p style="margin-top: 20px; font-size: 12px; opacity: 0.6;">
+                *This represents the average fair price. Final quote depends on specific bakery rates.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Sweet Bag - BakeIO{% endblock %}
+
+{% block extra_head %}
+<style>
+    .cart-item-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+
+    .cart-item-card:hover {
+        transform: translateX(5px);
+        border-color: var(--secondary);
+        box-shadow: var(--shadow-md);
+    }
+
+    .product-img-placeholder {
+        width: 80px;
+        height: 80px;
+        background: #fdf2f2;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .qty-control {
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 50px;
+        padding: 5px;
+        border: 1px solid #eee;
+    }
+
+    .qty-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: white;
+        color: var(--dark);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        transition: all 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .qty-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .qty-input {
+        width: 40px;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-weight: 600;
+        padding: 0;
+        margin: 0;
+    }
+
+    .qty-input:focus {
+        outline: none;
+        box-shadow: none;
+    }
+
+    .summary-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        position: sticky;
+        top: 100px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid #eee;
+    }
+
+    .remove-btn {
+        color: #ff7675;
+        font-size: 1.2rem;
+        transition: color 0.2s;
+    }
+
+    .remove-btn:hover {
+        color: #d63031;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <span
+            style="background: var(--accent); color: var(--dark); padding: 5px 15px; border-radius: 20px; font-weight: 600; font-size: 14px;">Review
+            Order</span>
+        <div style="flex: 1; height: 1px; background: #eee;"></div>
+    </div>
+    <h1 style="font-size: 2.5rem;">Your <span style="color: var(--primary);">Sweet Bag</span> 🛒</h1>
+    <p style="color: #666;">Double-checking everything before we preheat the ovens.</p>
+</div>
+
+{% if items %}
+<div class="grid" style="grid-template-columns: 2fr 1fr; gap: 40px; align-items: flex-start;">
+
+    <!-- Items List -->
+    <div>
+        {% for item in items %}
+        <div class="cart-item-card">
+            <div class="product-img-placeholder">
+                🍰
+            </div>
+            <div style="flex: 1;">
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ item.product.name }}</h4>
+                <p style="color: #999; font-size: 14px; margin: 4px 0;">{{ item.product.bakery.name }}</p>
+                <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
+                    <div class="qty-control">
+                        <form method="post" action="{% url 'update_quantity' item.id %}"
+                            style="display: flex; align-items: center;">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="{{ item.quantity|add:'-1' }}">
+                            <button type="submit" class="qty-btn" {% if item.quantity <=1 %}disabled
+                                style="opacity:0.5; cursor:not-allowed;" {% endif %}>-</button>
+                        </form>
+
+                        <input type="number" value="{{ item.quantity }}" class="qty-input" readonly>
+
+                        <form method="post" action="{% url 'update_quantity' item.id %}"
+                            style="display: flex; align-items: center;">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="{{ item.quantity|add:'1' }}">
+                            <button type="submit" class="qty-btn">+</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 700; font-size: 1.2rem; color: var(--dark);">₹{{ item.total_price }}</div>
+                <div style="color: #bbb; font-size: 12px;">₹{{ item.product.price }} / unit</div>
+                <a href="{% url 'remove_from_cart' item.id %}" class="remove-btn"
+                    style="margin-top: 10px; display: inline-block;">
+                    <i class="fas fa-trash-alt"></i> ×
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="mt-4">
+            <a href="/explore/cakes/"
+                style="color: var(--secondary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                ← Add more delights
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-card">
+        <h3 class="mb-4">Order Summary</h3>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <span style="color: #777;">Bag Subtotal</span>
+            <span style="font-weight: 600;">₹{{ cart_total|default:"0" }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <span style="color: #777;">Delivery Fee</span>
+            <span style="color: var(--secondary); font-weight: 700;">FREE</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <span style="color: #777;">Estimated Taxes</span>
+            <span style="font-weight: 600;">₹0.00</span>
+        </div>
+
+        <hr style="margin: 25px 0; border: none; border-top: 2px dashed #eee;">
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 35px; align-items: baseline;">
+            <span style="font-size: 1.1rem; font-weight: 600;">Total</span>
+            <div style="text-align: right;">
+                <span style="color: var(--primary); font-size: 1.8rem; font-weight: 800;">₹{{ cart_total|default:"0"
+                    }}</span>
+                <p style="font-size: 12px; color: #999; margin: 0;">Inclusive of all charges</p>
+            </div>
+        </div>
+
+        <a href="{% url 'checkout' %}" class="btn"
+            style="width: 100%; text-align: center; font-size: 1.1rem; padding: 18px; border-radius: 12px; display: block;">
+            Proceed to Checkout
+        </a>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; opacity: 0.6;">
+            <div style="font-size: 20px;">🛡️</div>
+            <p style="font-size: 12px; margin: 0;">Secure checkout & fresh delivery guaranteed</p>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card text-center"
+    style="padding: 100px 20px; border: 2px dashed #eee; background: transparent; box-shadow: none;">
+    <div style="font-size: 5rem; margin-bottom: 25px; filter: grayscale(1);">🥐</div>
+    <h2 style="font-size: 2rem;">Your bag is currently empty</h2>
+    <p style="color: #999; margin-bottom: 40px; max-width: 400px; margin-left: auto; margin-right: auto;">
+        It looks like you haven't added any sweet treats yet. Our bakeries are waiting to share their best with you!
+    </p>
+    <a href="/explore/cakes/" class="btn" style="padding: 15px 40px;">Explore Local Bakes</a>
+</div>
+{% endif %}
+{% endblock %}

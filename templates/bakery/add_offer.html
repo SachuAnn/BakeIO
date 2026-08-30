@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Offer - BakeIO{% endblock %}
+
+{% block content %}
+<section class="dashboard-section" style="padding-top: 140px;">
+    <div class="container" style="max-width: 700px;">
+        <!-- Back Link -->
+        <div style="margin-bottom: 30px;">
+            <a href="{% url 'manage_offers' %}"
+                style="color: var(--secondary); text-transform: uppercase; letter-spacing: 2px; font-size: 11px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                ← Back to Offers
+            </a>
+        </div>
+
+        <!-- Glass Card -->
+        <div class="card"
+            style="border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-medium);">
+
+            <div style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                <h1 style="font-size: 32px; margin: 0;">🏷 Create New Offer</h1>
+                <p style="color: var(--text-muted); margin-top: 5px;">Attract customers with special deals</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">
+                        Offer Title
+                    </label>
+                    <input type="text" name="title" required placeholder="e.g., Summer Sale, Weekend Special"
+                        style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.8); font-size: 15px;">
+                    <small style="color: #888; font-size: 12px; margin-top: 5px; display: block;">
+                        This will be displayed to customers
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">
+                        Discount Percentage
+                    </label>
+                    <div style="position: relative;">
+                        <input type="number" name="discount_percent" required min="1" max="100" placeholder="20"
+                            style="width: 100%; padding: 12px 40px 12px 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.8); font-size: 15px;">
+                        <span
+                            style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #888; font-weight: 600;">%</span>
+                    </div>
+                    <small style="color: #888; font-size: 12px; margin-top: 5px; display: block;">
+                        Enter a value between 1 and 100
+                    </small>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 1.5rem;">💡</span>
+                        <strong style="color: var(--primary);">Offer Preview</strong>
+                    </div>
+                    <p style="color: #666; font-size: 14px; margin: 0;">
+                        Customers will see: <span
+                            style="background: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 600; color: var(--primary);">Your
+                            Title - XX% OFF</span>
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <button type="submit" class="btn" style="flex: 1;">
+                        ✨ Create Offer
+                    </button>
+                    <a href="{% url 'manage_offers' %}" class="btn btn-outline" style="flex: 1; text-align: center;">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

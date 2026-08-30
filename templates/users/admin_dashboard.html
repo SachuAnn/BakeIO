@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Control Center - BakeIO{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+  <h1>👑 Admin <span style="color: var(--primary);">Control Center</span></h1>
+  <p style="color: #666;">System-wide overview and management.</p>
+</div>
+
+<!-- Quick Stats -->
+<div class="grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+  <div class="card text-center" style="border-bottom: 4px solid var(--primary);">
+    <h4 style="color: #999; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Total Users</h4>
+    <div style="font-size: 2.5rem; font-weight: 700; color: var(--dark); margin: 10px 0;"><span>{{total_users}}</span>
+    </div>
+  </div>
+  <div class="card text-center" style="border-bottom: 4px solid var(--secondary);">
+    <h4 style="color: #999; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Partner Bakeries</h4>
+    <div style="font-size: 2.5rem; font-weight: 700; color: var(--dark); margin: 10px 0;">
+      <span>{{bakeries.count}}</span>
+    </div>
+  </div>
+  <div class="card text-center" style="border-bottom: 4px solid var(--accent);">
+    <h4 style="color: #999; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Total Orders</h4>
+    <div style="font-size: 2.5rem; font-weight: 700; color: var(--dark); margin: 10px 0;"><span>{{orders.count}}</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns: 2fr 1fr; gap: 30px;">
+  <!-- Management Grid -->
+  <div>
+    <h3 class="mb-4">System Management</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <a href="{% url 'admin_view_users' %}" class="card">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">👥</div>
+        <h4 style="margin:0;">User Management</h4>
+        <p style="color: #aaa; font-size: 12px;">View, block, or unblock users</p>
+      </a>
+      <a href="{% url 'manage_bakeries' %}" class="card">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">🏪</div>
+        <h4 style="margin:0;">Partner Bakeries</h4>
+        <p style="color: #aaa; font-size: 12px;">Approve and monitor shops</p>
+      </a>
+      <a href="{% url 'manage_delivery' %}" class="card">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">🚚</div>
+        <h4 style="margin:0;">Fleet Operations</h4>
+        <p style="color: #aaa; font-size: 12px;">Manage delivery partners</p>
+      </a>
+      <a href="{% url 'admin_orders' %}" class="card">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">📦</div>
+        <h4 style="margin:0;">Global Order Log</h4>
+        <p style="color: #aaa; font-size: 12px;">Track all system transactions</p>
+      </a>
+      <a href="{% url 'admin_payments' %}" class="card">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">💳</div>
+        <h4 style="margin:0;">Revenue & Payments</h4>
+        <p style="color: #aaa; font-size: 12px;">Monitor financial health</p>
+      </a>
+    </div>
+  </div>
+
+  <!-- Admin Notifications -->
+  <div>
+    <h3 class="mb-4">🔔 System Logs ({{ unread_count }})</h3>
+    <div class="card" style="padding: 0; max-height: 500px; overflow-y: auto;">
+      {% for n in notifications %}
+      <div style="padding: 15px; border-bottom: 1px solid #eee; font-size: 13px;">
+        <p style="margin: 0; {% if not n.is_read %}font-weight: 600; color: var(--primary);{% endif %}">{{ n.message }}
+        </p>
+        <small style="color: #999;">{{ n.created_at|timesince }} ago</small>
+      </div>
+      {% empty %}
+      <div style="padding: 40px; text-align: center; color: #999;">No system alerts.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="mt-4 card">
+  <h3 class="mb-4">🌍 System-wide Reviews</h3>
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #eee;">
+          <th style="padding: 12px;">Date</th>
+          <th style="padding: 12px;">User</th>
+          <th style="padding: 12px;">Product</th>
+          <th style="padding: 12px;">Rating</th>
+          <th style="padding: 12px;">Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for review in recent_reviews %}
+        <tr style="border-bottom: 1px solid #f9f9f9;">
+          <td style="padding: 12px; font-size: 13px; color: #999;">
+            {{ review.created_at|date:"M d, H:i" }}
+          </td>
+          <td style="padding: 12px;">
+            <strong>{{ review.user.username }}</strong>
+          </td>
+          <td style="padding: 12px; color: var(--primary);">
+            {{ review.product.name }}
+          </td>
+          <td style="padding: 12px; color: var(--secondary);">
+            {{ review.rating }} ★
+          </td>
+          <td style="padding: 12px; font-size: 13px; color: #666; max-width: 300px;">
+            {{ review.comment|truncatechars:100 }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="padding: 40px; text-align: center; color: #999;">No reviews found in the system.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - BAKEIO{% endblock %}
+
+{% block content %}
+<section class="auth-section" style="min-height: 90vh;">
+    <div class="container" style="max-width: 450px;">
+        <div class="auth-header text-center mb-4" style="margin-bottom: 50px;">
+            <p
+                style="text-transform: uppercase; letter-spacing: 3px; font-size: 11px; color: var(--secondary); margin-bottom: 15px;">
+                Welcome Back</p>
+            <h1 style="font-size: 48px;">Login</h1>
+        </div>
+
+        {% if error %}
+        <div
+            style="padding: 15px; background: var(--accent); color: var(--primary); border: 1px solid var(--border); margin-bottom: 30px; font-size: 13px; text-align: center;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <input type="text" name="username" placeholder="Username" required>
+            </div>
+
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+
+            <div class="form-group">
+                <select name="role" required>
+                    <option value="">Choose Role</option>
+                    <option value="customer">Customer</option>
+                    <option value="bakery">Bakery</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; margin-top: 30px;">Enter Dashboard</button>
+        </form>
+
+        <div class="text-center mt-4"
+            style="font-size: 13px; color: var(--text-muted); font-weight: 300; letter-spacing: 1px; margin-top: 40px;">
+            <p>New to BakeIO? <a href="{% url 'register' %}"
+                    style="color: var(--primary); font-weight: 700; border-bottom: 1px solid var(--secondary);">Create
+                    Account</a></p>
+        </div>
+    </div>
+</section>
+{% endblock %}

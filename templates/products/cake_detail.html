@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - BAKEIO{% endblock %}
+
+{% block extra_head %}
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="product-detail" style="padding-top: 140px; padding-bottom: 100px;">
+    <div class="container">
+        <div class="grid"
+            style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 80px; align-items: start;">
+
+            <!-- Media Section -->
+            <div class="product-media">
+                {% if product.model_3d %}
+                <div
+                    style="aspect-ratio: 1/1; background: var(--bg-warm); border: 1px solid var(--border); overflow: hidden; position: relative;">
+                    <model-viewer id="cake-viewer" src="{{ product.model_3d.url }}" ar
+                        ar-modes="webxr scene-viewer quick-look" camera-controls touch-action="pan-y"
+                        alt="A 3D model of {{ product.name }}"
+                        style="width: 100%; height: 100%; background-color: var(--bg-warm);">
+                        <button slot="ar-button"
+                            style="background-color: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); box-shadow: var(--shadow-medium); font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2L4 6v12l8 4 8-4V6l-8-4zm7 15.11l-7 3.5-7-3.5v-10l7-3.5 7 3.5v10zM12 7.15l5.25 2.62v4.46L12 16.85l-5.25-2.62V9.77L12 7.15z" />
+                            </svg>
+                            View in AR
+                        </button>
+                    </model-viewer>
+                </div>
+                <p
+                    style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 15px; letter-spacing: 1px; text-transform: uppercase;">
+                    Drag to explore in 3D</p>
+                {% elif product.image %}
+                <div style="aspect-ratio: 1/1; overflow: hidden; border: 1px solid var(--border);">
+                    <img src="{{ product.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Content Section -->
+            <div class="product-info">
+                <p
+                    style="text-transform: uppercase; letter-spacing: 3px; font-size: 12px; color: var(--secondary); margin-bottom: 10px;">
+                    {{ product.bakery.name }}
+                </p>
+                <h1 style="font-size: 56px; margin-bottom: 20px; line-height: 1.1;">
+                    {{ product.name }}
+                </h1>
+
+                <div style="margin-bottom: 30px;">
+                    {% if product.offer and product.offer.is_active %}
+                    <div style="display: flex; align-items: baseline; gap: 15px;">
+                        <span style="font-size: 32px; color: var(--primary); font-weight: 700;">
+                            ₹{{ product.discounted_price }}
+                        </span>
+                        <span style="font-size: 18px; color: #999; text-decoration: line-through;">
+                            ₹{{ product.price }}
+                        </span>
+                        <span
+                            style="background: #fff3e0; color: #ef6c00; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; letter-spacing: 1px;">
+                            {{ product.offer.discount_percent }}% OFF
+                        </span>
+                    </div>
+                    <p style="color: var(--secondary); font-size: 14px; margin-top: 5px; font-weight: 600;">
+                        ✨ Exclusive Offer: {{ product.offer.title }}
+                    </p>
+                    {% else %}
+                    <p style="font-size: 24px; color: var(--primary);">
+                        ₹{{ product.price }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <div style="width: 60px; height: 1px; background: var(--secondary); margin-bottom: 40px;"></div>
+                <p style="font-weight: 300; line-height: 2; margin-bottom: 40px; color: var(--text-muted);">
+                    {{ product.description }}
+                </p>
+                <div style="display: flex; gap: 20px;">
+                    <form action="{% url 'add_to_cart' product.id %}" method="post" style="flex: 2;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn" style="width: 100%;">Add to Tray</button>
+                    </form>
+                    <a href="javascript:void(0)"
+                        class="btn wishlist-toggle {% if is_wishlisted %}btn-secondary{% else %}btn-outline{% endif %}"
+                        data-id="{{ product.id }}" style="flex: 1;">
+                        <span class="btn-text">{% if is_wishlisted %}★ Favored{% else %}Wishlist{% endif %}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div style="margin-top: 120px; border-top: 1px solid var(--border); padding-top: 80px;">
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 60px;">
+                <div>
+                    <h2 style="font-size: 36px; margin-bottom: 30px;">Guest Thoughts</h2>
+                    <p style="font-weight: 300; line-height: 1.8; color: var(--text-muted); margin-bottom: 40px;">Join
+                        the conversation. Share your experience with this artisanal creation.</p>
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'add_review' product.id %}" style="max-width: 400px;">
+                        {% csrf_token %}
+                        <select name="rating" required style="border-radius: 0;">
+                            <option value="">Rate this item...</option>
+                            <option value="5">5 Stars - Exceptional</option>
+                            <option value="4">4 Stars - Delightful</option>
+                            <option value="3">3 Stars - Good</option>
+                            <option value="2">2 Stars - Average</option>
+                            <option value="1">1 Star - Disappointing</option>
+                        </select>
+                        <textarea name="comment" placeholder="Tell us more about the flavors..." required
+                            style="height: 100px; border-radius: 0;"></textarea>
+                        <button type="submit" class="btn btn-outline" style="width: 100%;">Post Review</button>
+                    </form>
+                    {% else %}
+                    <p style="font-style: italic; color: var(--text-muted);">
+                        <a href="{% url 'login' %}" style="text-decoration: underline;">Login</a> to share your
+                        thoughts.
+                    </p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <ul style="list-style: none;">
+                        {% for review in product.reviews.all %}
+                        <li
+                            style="margin-bottom: 30px; padding: 30px; background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow-subtle);">
+                            <div
+                                style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div
+                                        style="width: 40px; height: 40px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700; font-size: 18px;">
+                                        {{ review.user.username|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <h4
+                                            style="font-size: 16px; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
+                                            {{ review.user.username }}
+                                        </h4>
+                                        <p style="font-size: 11px; margin: 0; opacity: 0.5;">
+                                            {{ review.created_at|date:"M d, Y" }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style="color: var(--secondary); font-size: 18px;">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %} ★ {% else %} ☆ {% endif %} {% endfor %}
+                                        </div>
+                                </div>
+                                <p
+                                    style="font-weight: 300; font-size: 16px; color: var(--text); line-height: 1.8; font-style: italic;">
+                                    "{{ review.comment }}"
+                                </p>
+                        </li>
+                        {% empty %}
+                        <p style="font-style: italic; color: var(--text-muted); padding: 40px 0;">Be the first to share
+                            a review for this masterpiece.</p>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% block extra_js %}
+<script>
+    const wishlistBtn = document.querySelector('.wishlist-toggle');
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            const btn = this;
+            const btnText = this.querySelector('.btn-text');
+
+            fetch(`/wishlist/add/${id}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'added') {
+                        btn.classList.remove('btn-outline');
+                        btn.classList.add('btn-secondary');
+                        btnText.innerText = '★ Favored';
+                    } else {
+                        btn.classList.remove('btn-secondary');
+                        btn.classList.add('btn-outline');
+                        btnText.innerText = 'Wishlist';
+                    }
+                    showToast(data.message);
+                })
+                .catch(err => {
+                    console.error('Wishlist error:', err);
+                    showToast('Failed to update wishlist', 'error');
+                });
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

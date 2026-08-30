@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Bakery Dashboard - BakeIO Business{% endblock %}
+
+{% block extra_js %}
+<script>
+  // 🏠 Real-time Bakery Tracking (Zomato Style)
+  if ("geolocation" in navigator) {
+    console.log("🏠 Initializing Bakery Tracking...");
+
+    const syncBakeryLocation = (position) => {
+      const data = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+
+      fetch("{% url 'update_location' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(data)
+      })
+        .then(res => res.json())
+        .then(json => console.log("✅ Bakery Location Synced:", json))
+        .catch(err => console.warn("❌ Bakery sync failed:", err));
+    };
+
+    navigator.geolocation.watchPosition(syncBakeryLocation, (err) => {
+      console.warn("🏠 Bakery tracking limited:", err.message);
+    }, {
+      enableHighAccuracy: true,
+      maximumAge: 30000,
+      timeout: 10000
+    });
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4"
+  style="display: flex; justify-content: space-between; align-items: flex-end; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+  <div>
+    <h1 style="margin: 0; font-size: 2rem; color: var(--dark);">{{ user.owned_bakery.name }} Dashboard</h1>
+    <p style="margin: 5px 0 0; color: #666; font-size: 1.1rem;">Manage your products, orders, and business insights.</p>
+  </div>
+  <button onclick="shareLocation()" class="btn"
+    style="background: var(--primary); color: white; display: flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-weight: 600; transition: all 0.3s;">
+    📍 Share Location
+  </button>
+</div>
+
+<script>
+  function shareLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    const btn = document.querySelector('button[onclick="shareLocation()"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ Updating...";
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      try {
+        const response = await fetch('/auth/api/update_location/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ latitude: lat, longitude: lng })
+        });
+
+        if (response.ok) {
+          btn.innerHTML = "✅ Location Updated";
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          throw new Error('Failed to update');
+        }
+      } catch (error) {
+        console.error(error);
+        btn.innerHTML = "❌ Error";
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }, 3000);
+      }
+    }, () => {
+      alert("Unable to retrieve your location");
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    });
+  }
+</script>
+
+<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 10px;">
+  <a href="{% url 'bakery_orders' %}" class="card text-center action-card"
+    style="display: block; padding: 30px; transition: transform 0.2s, box-shadow: 0.2s; text-decoration: none; border: 1px solid #eee;">
+    <div style="font-size: 3rem; margin-bottom: 15px;">📦</div>
+    <h3 style="margin: 0; color: var(--dark);">Incoming Orders</h3>
+    <p style="color: #888; font-size: 14px; margin-top: 8px;">Manage and prepare bakes</p>
+  </a>
+
+  <a href="{% url 'manage_products' %}" class="card text-center action-card"
+    style="display: block; padding: 30px; transition: transform 0.2s, box-shadow: 0.2s; text-decoration: none; border: 1px solid #eee;">
+    <div style="font-size: 3rem; margin-bottom: 15px;">🍰</div>
+    <h3 style="margin: 0; color: var(--dark);">Menu & Products</h3>
+    <p style="color: #888; font-size: 14px; margin-top: 8px;">Update your offerings</p>
+  </a>
+
+  <a href="{% url 'manage_offers' %}" class="card text-center action-card"
+    style="display: block; padding: 30px; transition: transform 0.2s, box-shadow: 0.2s; text-decoration: none; border: 1px solid var(--secondary);">
+    <div style="font-size: 3rem; margin-bottom: 15px;">🏷️</div>
+    <h3 style="margin: 0; color: var(--dark);">Offers & Deals</h3>
+    <p style="color: #888; font-size: 14px; margin-top: 8px;">Run promotions</p>
+  </a>
+
+  <a href="{% url 'bakery_analytics' %}" class="card text-center action-card"
+    style="display: block; padding: 30px; transition: transform 0.2s, box-shadow: 0.2s; text-decoration: none; border: 1px solid #eee;">
+    <div style="font-size: 3rem; margin-bottom: 15px;">📊</div>
+    <h3 style="margin: 0; color: var(--dark);">Business Analytics</h3>
+    <p style="color: #888; font-size: 14px; margin-top: 8px;">Track your growth</p>
+  </a>
+
+  <a href="/chat/rooms/" class="card text-center action-card"
+    style="display: block; padding: 30px; transition: transform 0.2s, box-shadow: 0.2s; text-decoration: none; border: 1px solid var(--primary); background: linear-gradient(135deg, white, #FF6B6B11);">
+    <div style="font-size: 3rem; margin-bottom: 15px;">💬</div>
+    <h3 style="margin: 0; color: var(--dark);">Customer Chats</h3>
+    <p style="color: #888; font-size: 14px; margin-top: 8px;">Inquiries & support</p>
+  </a>
+</div>
+
+<style>
+  .action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+</style>
+
+<!-- 🗺️ Delivery Tracking Map -->
+<div class="card" style="margin-top: 20px; padding: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h3 style="margin: 0;">🚚 Quick Delivery Map</h3>
+    <p id="map-status" style="font-size: 11px; color: #888; margin: 0;">Live tracking active</p>
+  </div>
+  <div id="bakery-map" data-lat="{{ bakery.latitude|default:12.9716 }}"
+    data-lng="{{ bakery.longitude|default:77.5946 }}"
+    style="height: 350px; width: 100%; border-radius: 8px; z-index: 0;"></div>
+  <p style="margin-top: 10px; font-size: 13px; color: #666;">Showing assigned riders and their live locations.</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<script>
+  // Center map on bakery
+  const mapEl = document.getElementById('bakery-map');
+  const bakeryPos = [
+    parseFloat(mapEl.getAttribute('data-lat')),
+    parseFloat(mapEl.getAttribute('data-lng'))
+  ];
+  const bakeryMap = L.map('bakery-map').setView(bakeryPos, 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(bakeryMap);
+
+  const bakeryIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/992/992747.png',
+    iconSize: [30, 30]
+  });
+
+  const riderIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063823.png',
+    iconSize: [35, 35]
+  });
+
+  L.marker(bakeryPos, { icon: bakeryIcon }).addTo(bakeryMap).bindPopup("<b>{{ bakery.name }}</b>");
+
+  let riderMarkers = {};
+
+  const updateRiderMap = () => {
+    {% for assignment in active_assignments %}
+    fetch("{% url 'api_get_order_location' assignment.order.id %}")
+      .then(res => res.json())
+      .then(data => {
+        if (data.rider && data.rider.lat) {
+          const pos = [data.rider.lat, data.rider.lng];
+          const orderId = "{{ assignment.order.id }}";
+          if (riderMarkers[orderId]) {
+            riderMarkers[orderId].setLatLng(pos);
+          } else {
+            riderMarkers[orderId] = L.marker(pos, { icon: riderIcon })
+              .addTo(bakeryMap)
+              .bindPopup("<b>Rider for #" + orderId + "</b><br>" + (data.rider.status || 'Moving'));
+          }
+        }
+      });
+    {% endfor %}
+  };
+
+  setInterval(updateRiderMap, 7000);
+  updateRiderMap();
+</script>
+
+<div class="mt-4 card" style="background: rgba(255,255,255,0.9);">
+  <h3 style="margin-bottom: 25px;">⭐ Customer Feedback</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    {% for review in recent_reviews %}
+    <div style="padding: 15px; border: 1px solid var(--border); border-radius: 8px; background: white;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <strong style="font-size: 14px; color: var(--primary);">
+          {{ review.product.name }}
+        </strong>
+        <span style="color: var(--secondary); font-size: 12px;">
+          {% for i in "12345" %}
+          {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %} {% endfor %} </span>
+      </div>
+      <p style="font-size: 13px; color: #666; font-style: italic; margin-bottom: 10px;">
+        "{{ review.comment|truncatechars:100 }}"
+      </p>
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f9f9f9; padding-top: 8px;">
+        <span style="font-size: 11px; color: #999;">
+          By {{ review.user.username }}
+        </span>
+        <span style="font-size: 11px; color: #999;">
+          {{ review.created_at|date:"M d" }}
+        </span>
+      </div>
+    </div>
+    {% empty %}
+    <p style="color: #999; font-style: italic; padding: 20px;">No reviews yet for your products.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="mt-4 card">
+  <h3>🎨 Custom Quote Requests</h3>
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #eee;">
+          <th style="padding: 10px;">Date</th>
+          <th style="padding: 10px;">Customer</th>
+          <th style="padding: 10px;">Concept</th>
+          <th style="padding: 10px;">Design</th>
+          <th style="padding: 10px;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for qr in quote_requests %}
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 10px;">
+            {{ qr.created_at|date:"M d" }}
+          </td>
+          <td style="padding: 10px;">
+            {{ qr.customer.username }}
+          </td>
+          <td style="padding: 10px; font-size: 13px; color: #666; max-width: 250px;">
+            {{ qr.generated_cake.prompt|truncatechars:100 }}
+          </td>
+          <td style="padding: 10px;">
+            <a href="{{ qr.generated_cake.image_url }}" target="_blank">
+              <img src="{{ qr.generated_cake.image_url }}"
+                style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;">
+            </a>
+          </td>
+          <td style="padding: 10px;">
+            <a href="/chat/rooms/" class="btn btn-sm" style="font-size: 12px; padding: 5px 10px;">Reply 💬</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="padding: 20px; text-align: center; color: #999;">No pending quote requests.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-4 card">
+  <h3>🔔 Recent Notifications ({{ unread_count }})</h3>
+  <ul style="list-style: none; margin-top: 15px; padding: 0;">
+    {% for n in notifications %}
+    <li style="padding: 12px; border-bottom: 1px solid #eee; font-size: 14px;">
+      {{ n.message }}
+      {% if not n.is_read %} <span style="color: var(--primary); margin-left: 5px;">●</span> {% endif %}
+    </li>
+    {% empty %}
+    <li style="padding: 12px; color: #999;">No new notifications</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

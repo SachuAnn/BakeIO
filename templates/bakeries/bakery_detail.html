@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ bakery.name }} - BakeIO Showcase{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.wishlist-toggle').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            const heart = this.querySelector('.heart-icon');
+            const self = this;
+
+            fetch(`/wishlist/add/${id}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'added') {
+                        heart.innerText = '❤️';
+                    } else {
+                        heart.innerText = '♡';
+                    }
+                    showToast(data.message);
+                })
+                .catch(err => {
+                    console.error('Wishlist error:', err);
+                    showToast('Failed to update wishlist', 'error');
+                });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="bakery-header card mb-4"
+    style="background: linear-gradient(135deg, white, #4ECDC411); border-top: 5px solid var(--secondary); padding: 40px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h1 style="font-size: 3rem;">{{ bakery.name }}</h1>
+            <p style="color: #666; font-size: 1.1rem; max-width: 700px; margin-top: 15px;">{{ bakery.description }}</p>
+        </div>
+        <a href="{% url 'open_chat' bakery.id %}" class="btn"
+            style="background-color: var(--secondary); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🧁</span> Live Chat
+        </a>
+    </div>
+</div>
+
+<div class="mb-4 mt-4">
+    <h2>Full <span style="color: var(--primary);">Menu</span></h2>
+</div>
+
+<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+    {% for product in products %}
+    <div class="card" style="padding: 20px; border: 1px solid #eee;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 1.2rem;">{{ product.name }}</h3>
+            <div style="text-align: right;">
+                {% if product.offer and product.offer.is_active %}
+                <del style="color: #ccc; font-size: 12px;">
+                    ₹{{ product.price }}
+                </del>
+                <div style="color: var(--secondary); font-weight: 700; font-size: 1.1rem;">
+                    ₹{{ product.discounted_price }}
+                </div>
+                <span
+                    style="font-size: 10px; color: white; background: var(--secondary); padding: 2px 6px; border-radius: 4px;">
+                    {{ product.offer.discount_percent }}% OFF
+                </span>
+                {% else %}
+                <div style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">
+                    ₹{{ product.price }}
+                </div>
+                {% endif %}
+                <div style="margin-top: 5px;">
+                    <a href="javascript:void(0)" class="wishlist-toggle" data-id="{{ product.id }}"
+                        style="text-decoration: none; color: var(--primary); font-size: 18px;" title="Wishlist">
+                        <span class="heart-icon">
+                            {% if product.id in wishlisted_product_ids %}❤️{% else %}♡{% endif %}
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <p style="color: #888; font-size: 13px; min-height: 40px;">{{ product.description|truncatewords:10 }}</p>
+
+        <form action="{% url 'add_to_cart' product.id %}" method="post" style="margin-top: 15px;">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="width: 100%; padding: 10px; border-radius: 8px;">Add to
+                Cart</button>
+        </form>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1/-1;" class="text-center card">
+        <p style="color: #999;">This bakery hasn't listed any items yet.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div style="margin-top: 40px;">
+    <a href="/bakeries/" style="color: #999;">← Back to All Bakeries</a>
+</div>
+{% endblock %}

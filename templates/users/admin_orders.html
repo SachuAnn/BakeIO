@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}System Orders - BakeIO Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>Global <span style="color: var(--primary);">Order Log</span> 📦</h1>
+        <p style="color: #666;">Real-time tracking of all system transactions.</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline">Back to Panel</a>
+</div>
+
+<div class="card" style="padding: 0; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <th style="padding: 15px 20px;">ID</th>
+                <th style="padding: 15px 20px;">Customer</th>
+                <th style="padding: 15px 20px;">Bakery</th>
+                <th style="padding: 15px 20px;">Status</th>
+                <th style="padding: 15px 20px;">Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 15px 20px; font-weight: 700; color: var(--primary);">#{{ order.id }}</td>
+                <td style="padding: 15px 20px;">{{ order.customer.username }}</td>
+                <td style="padding: 15px 20px;">{{ order.bakery.name }}</td>
+                <td style="padding: 15px 20px;">
+                    <span
+                        style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: #f1f5f9; color: #475569;">
+                        {{ order.status }}
+                    </span>
+                </td>
+                <td style="padding: 15px 20px; font-size: 13px; color: #999;">{{ order.created_at|date:"M d, H:i" }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="padding: 40px; text-align: center; color: #999;">No active orders in the system.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

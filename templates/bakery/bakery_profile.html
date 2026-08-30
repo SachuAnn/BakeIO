@@ -1,0 +1,27 @@
+<h2>🏪 Bakery Profile</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label>Name</label>
+    <input type="text" name="name" value="{{ bakery.name }}">
+
+    <label>Description</label>
+    <textarea name="description">{{ bakery.description }}</textarea>
+
+    <label>Address</label>
+    <textarea name="address">{{ bakery.address }}</textarea>
+
+    <label>Logo</label>
+    <input type="file" name="logo">
+
+    {% if bakery.logo %}
+        <img src="{{ bakery.logo.url }}" width="120">
+    {% endif %}
+
+    <button type="submit">Save</button>
+</form>
+
+
+<br>
+<a href="/auth/dashboard/bakery/">⬅ Back to Dashboard</a>

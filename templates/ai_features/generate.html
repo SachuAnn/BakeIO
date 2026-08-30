@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Cake Designer - Create Your Dream Bake{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 style="font-size: 3rem;">✨ AI <span style="color: var(--primary);">Designer</span></h1>
+    <p style="color: #666; max-width: 600px; margin: 10px auto;">Describe any cake you can imagine, and our neural
+        networks will bring it to life.</p>
+</div>
+
+<div class="card"
+    style="max-width: 800px; margin: 0 auto; padding: 40px; border: 1.5px solid var(--accent); background: linear-gradient(135deg, white, #FFE66D11);">
+    <form id="generationForm">
+        <!-- Removed CSRF and Method to prevent default page reload -->
+        <label style="font-weight: 600; margin-bottom: 10px; display: block;">What should it look like?</label>
+        <textarea name="prompt" id="promptInput" rows="5"
+            placeholder="e.g. A three-tier Spiderman themed chocolate cake with blue web icing and edible skyscrapers..."
+            style="font-size: 1.1rem; line-height: 1.6; padding: 20px; border-radius: 15px;" required></textarea>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn" id="gen-btn" style="padding: 15px 40px; font-size: 1.1rem;">
+                🎨 Generate My Masterpiece
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- AI result container (Hidden by default) -->
+<div id="ai-result-section" class="text-center mt-4" style="padding-top: 40px; display: none;">
+    <div class="card" style="max-width: 800px; margin: 0 auto; padding: 0; overflow: hidden; border: 1px solid #ddd;">
+        <div style="background: var(--dark); color: white; padding: 20px;">
+            <h3 style="color: white; margin: 0;">🎉 Design Computed Successfully</h3>
+            <p id="displayPrompt" style="opacity: 0.6; font-size: 14px; margin-top: 5px;"></p>
+        </div>
+
+        <div style="padding: 30px; background: #fafafa;">
+            <div id="imageContainer" style="position: relative; min-height: 400px;">
+                <!-- Loading Spinner -->
+                <div id="imageLoader"
+                    style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <div
+                        style="border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto;">
+                    </div>
+                    <p style="margin-top: 15px; color: var(--text-muted);">Generating your masterpiece...</p>
+                    <p id="loadingStatus" style="font-size: 12px; margin-top: 10px; color: var(--text-muted);"></p>
+                </div>
+
+                <!-- Image -->
+                <img id="generatedImage" src="" alt="AI Generation Result"
+                    style="max-width: 100%; border-radius: 15px; box-shadow: var(--shadow-lg); border: 4px solid white; display: none;">
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+                <button onclick="document.getElementById('quoteModal').style.display='flex'" class="btn">🛒 Request
+                    Custom Quote</button>
+                <button onclick="resetDesigner()" class="btn btn-outline">🔄 Try Another Concept</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quote Modal -->
+<div id="quoteModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 10000;">
+    <div class="card" style="width: 100%; max-width: 500px; padding: 30px; position: relative;">
+        <button onclick="document.getElementById('quoteModal').style.display='none'"
+            style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+        <h3>Request Quote</h3>
+        <p style="color: #666; margin-bottom: 20px;">Send this design to a bakery for a price estimate.</p>
+
+        <form id="quoteForm" action="" method="post">
+            {% csrf_token %}
+            <label style="display: block; margin-bottom: 10px; font-weight: 600;">Select Bakery</label>
+            <select name="bakery_id"
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;"
+                required>
+                <option value="" disabled selected>Choose a bakery...</option>
+                {% for b in bakeries %}
+                <option value="{{ b.id }}">{{ b.name }} ({{ b.address|default:'Bangalore' }})</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn" style="width: 100%;">Send Request 🚀</button>
+        </form>
+    </div>
+</div>
+
+<!-- JS Implementation -->
+<script>
+    const genForm = document.getElementById('generationForm');
+    const genBtn = document.getElementById('gen-btn');
+    const resultSection = document.getElementById('ai-result-section');
+    const imageLoader = document.getElementById('imageLoader');
+    const img = document.getElementById('generatedImage');
+    const statusText = document.getElementById('loadingStatus');
+    const displayPrompt = document.getElementById('displayPrompt');
+    const quoteForm = document.getElementById('quoteForm');
+
+    genForm.onsubmit = async function (e) {
+        e.preventDefault();
+
+        const promptInput = document.getElementById('promptInput');
+        const prompt = promptInput.value.trim();
+        if (!prompt) return;
+
+        // UI Updates
+        genBtn.disabled = true;
+        genBtn.innerHTML = '🪄 Brewing Magic...';
+        genBtn.style.opacity = '0.6';
+
+        resultSection.style.display = 'block';
+        imageLoader.style.display = 'block';
+        img.style.display = 'none';
+        displayPrompt.textContent = `"${prompt}"`;
+
+        // Scroll to results
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+
+        // IMPROVED PROMPT ADHERENCE: Subject first, descriptors second.
+        const enhancedPrompt = `${prompt}, 8k ultra-detailed professional bakery photography, masterpiece custom cake, sharp focus, cinematic lighting`;
+        const safePrompt = encodeURIComponent(enhancedPrompt);
+        const plusPrompt = safePrompt.replace(/%20/g, '+');
+
+        // SILENT API CONFIG
+        const APIs = [
+            // API 1: Pollinations (Using FLUX model with + encoding)
+            { url: `https://pollinations.ai/p/${plusPrompt}?width=1024&height=1024&model=flux&nologo=true&enhance=true`, name: 'Pro AI Engine' },
+            // API 2: Pollinations (Standard Engine with + encoding)
+            { url: `https://image.pollinations.ai/prompt/${plusPrompt}?width=1024&height=1024&nologo=true&enhance=true`, name: 'Performance Engine' },
+            // API 3: Hercai (Stable Diffusion V3)
+            { url: `https://hercai.onrender.com/v3/text2image?prompt=${safePrompt}`, name: 'Backup AI' }
+        ];
+
+        let success = false;
+
+        for (let i = 0; i < APIs.length; i++) {
+            statusText.textContent = `Connecting to ${APIs[i].name}...`;
+
+            try {
+                const api = APIs[i];
+                console.log(`Trying API: ${api.url}`);
+
+                // Direct image loading test
+                const finalImageUrl = await new Promise((resolve, reject) => {
+                    const testImg = new Image();
+                    testImg.onload = () => resolve(api.url);
+                    testImg.onerror = () => reject();
+                    setTimeout(() => reject('timeout'), 20000);
+                    testImg.src = api.url;
+                });
+
+                // STEP 2: Save to backend via AJAX
+                const response = await fetch('/ai/generate/save/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: new URLSearchParams({
+                        'prompt': prompt,
+                        'image_url': finalImageUrl
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    quoteForm.action = `/ai/generate/quote/${data.id}/`;
+                    img.src = finalImageUrl;
+                    img.style.display = 'block';
+                    imageLoader.style.display = 'none';
+                    genBtn.innerHTML = '✨ Generation Complete!';
+                    success = true;
+                    break;
+                }
+            } catch (err) {
+                console.warn(`API ${i + 1} failed...`, err);
+            }
+        }
+
+        if (!success) {
+            statusText.innerHTML = `<span style="color: red;">⚠️ High service load. Showing fallback...</span>`;
+            const fallbackUrl = `https://picsum.photos/1024/1024?random=${Math.floor(Math.random() * 10000)}`;
+            img.src = fallbackUrl;
+            img.style.display = 'block';
+            imageLoader.style.display = 'none';
+            genBtn.innerHTML = '⚠️ Fallback Active';
+        }
+    };
+
+    function resetDesigner() {
+        location.reload();
+    }
+</script>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    textarea:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--accent) !important;
+        outline: none;
+    }
+</style>
+{% endblock %}

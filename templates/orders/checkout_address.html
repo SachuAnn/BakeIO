@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Delivery Address - BakeIO{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1>Where should we <span style="color: var(--primary);">deliver?</span> 🛵</h1>
+    <p style="color: #666;">Choose an existing address or add a new one.</p>
+</div>
+
+<div style="max-width: 900px; margin: 0 auto; display: grid; gap: 30px; grid-template-columns: 2fr 1fr;">
+
+    <!-- LEFT: Saved Addresses -->
+    <div>
+        <h3>Saved Addresses</h3>
+
+        {% if addresses %}
+        <form method="post" action="{% url 'checkout_address' %}">
+            {% csrf_token %}
+
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+
+                {% for address in addresses %}
+                <div class="card"
+                    style="padding: 15px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+
+                    <!-- Select Address -->
+                    <label style="cursor:pointer; display:flex; gap:15px;">
+                        <input type="radio" name="address_id" value="{{ address.id }}" required>
+
+                        <div>
+                            <strong>{{ address.full_name }}</strong><br>
+                            <small style="color:#666;">
+                                {{ address.street_address }},
+                                {{ address.city }}
+                            </small><br>
+                            <small style="color:#999;">
+                                📞 {{ address.phone_number }}
+                            </small>
+                        </div>
+                    </label>
+
+                    <!-- Delete Address -->
+                    <a href="#" onclick="deleteAddress({{ address.id }}); return false;"
+                        style="color: red; font-size: 18px; text-decoration: none; cursor: pointer;">
+                        🗑️
+                    </a>
+
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <button type="submit" class="btn mt-4" style="width:100%;">
+                Continue to Payment →
+            </button>
+
+        </form>
+
+        {% else %}
+        <p style="color:#999; margin-top:15px;">
+            No saved addresses found. Please add one first.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT: Add Address -->
+    <div class="card" style="padding: 20px;">
+        <h3>Add New Address</h3>
+
+        <!-- Location Status -->
+        <div id="locationStatus"
+            style="padding: 10px; margin: 15px 0; border-radius: 8px; font-size: 14px; display: none;">
+            <span id="locationText"></span>
+        </div>
+
+        <form method="post" action="{% url 'add_address' %}" id="addressForm">
+            {% csrf_token %}
+
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+
+                <input type="text" name="full_name" placeholder="Full Name" required>
+                <input type="text" name="phone_number" placeholder="Phone Number" required>
+
+                <textarea name="street_address" placeholder="Street Address, Flat No, Landmark" rows="3"
+                    required></textarea>
+
+                <input type="text" name="city" placeholder="City" required>
+
+                <!-- Hidden fields for coordinates -->
+                <input type="hidden" name="latitude" id="latitude" value="">
+                <input type="hidden" name="longitude" id="longitude" value="">
+
+                <label style="font-size: 13px;">
+                    <input type="checkbox" name="is_default">
+                    Set as default
+                </label>
+
+                <button type="submit" class="btn btn-outline" style="width:100%;">
+                    Save Address
+                </button>
+
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<script>
+    // Auto-detect user's current location
+    (function () {
+        const statusDiv = document.getElementById('locationStatus');
+        const statusText = document.getElementById('locationText');
+        const latInput = document.getElementById('latitude');
+        const lonInput = document.getElementById('longitude');
+
+        function showStatus(message, type) {
+            statusDiv.style.display = 'block';
+            statusText.textContent = message;
+
+            if (type === 'success') {
+                statusDiv.style.backgroundColor = '#d4edda';
+                statusDiv.style.color = '#155724';
+            } else if (type === 'error') {
+                statusDiv.style.backgroundColor = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+            } else {
+                statusDiv.style.backgroundColor = '#d1ecf1';
+                statusDiv.style.color = '#0c5460';
+            }
+        }
+
+        // Check if geolocation is supported
+        if ("geolocation" in navigator) {
+            showStatus('📍 Detecting your location...', 'info');
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    // Success - got location
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    latInput.value = lat;
+                    lonInput.value = lon;
+
+                    showStatus(`✅ Location detected! (${lat.toFixed(4)}, ${lon.toFixed(4)})`, 'success');
+
+                    // Hide status after 3 seconds
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+                },
+                function (error) {
+                    // Error or denied
+                    let errorMsg = '';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '⚠️ Location access denied. Using default location.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '⚠️ Location unavailable. Using default location.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '⚠️ Location request timed out. Using default location.';
+                            break;
+                        default:
+                            errorMsg = '⚠️ Could not detect location. Using default location.';
+                    }
+                    showStatus(errorMsg, 'error');
+
+                    // Set default coordinates (will be handled by backend)
+                    latInput.value = '';
+                    lonInput.value = '';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        } else {
+            showStatus('⚠️ Geolocation not supported by your browser.', 'error');
+        }
+    })();
+
+    // Auto-select first address radio button
+    (function () {
+        const firstRadio = document.querySelector('input[name="address_id"]');
+        if (firstRadio) {
+            firstRadio.checked = true;
+        }
+    })();
+
+    // Delete address function
+    function deleteAddress(addressId) {
+        if (!confirm('Delete this address?')) {
+            return;
+        }
+
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/checkout/delete-address/${addressId}/`;
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+
+{% endblock %}

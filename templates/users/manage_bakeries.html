@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Bakeries - BakeIO Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>Partner <span style="color: var(--secondary);">Bakeries</span> 🏪</h1>
+        <p style="color: #666;">Review and manage registered bakehouses.</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline">Back to Panel</a>
+</div>
+
+<div class="card" style="padding: 0; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <th style="padding: 15px 20px;">Bakery Name</th>
+                <th style="padding: 15px 20px;">Owner</th>
+                <th style="padding: 15px 20px;">Status</th>
+                <th style="padding: 15px 20px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bakery in bakeries %}
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 15px 20px;">
+                    <div style="font-weight: 600;">{{ bakery.name }}</div>
+                </td>
+                <td style="padding: 15px 20px;">
+                    <div style="color: #666;">{{ bakery.owner.username }}</div>
+                </td>
+                <td style="padding: 15px 20px;">
+                    {% if bakery.is_active %}
+                    <span style="color: #059669; font-size: 14px; font-weight: 600;">🟢 ACTIVE</span>
+                    {% else %}
+                    <span style="color: #dc2626; font-size: 14px; font-weight: 600;">🔴 INACTIVE</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 15px 20px;">
+                    <form method="POST" action="{% url 'toggle_bakery_status' bakery.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        {% if bakery.is_active %}
+                        <button type="submit" class="btn"
+                            style="padding: 6px 15px; font-size: 12px; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; border: none;">
+                            Deactivate
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn"
+                            style="padding: 6px 15px; font-size: 12px; background: linear-gradient(135deg, #059669, #047857); color: white; border: none;">
+                            Activate
+                        </button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 40px; text-align: center; color: #999;">No bakeries registered yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

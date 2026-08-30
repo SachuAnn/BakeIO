@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users - BakeIO Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>System <span style="color: var(--primary);">Users</span> 👥</h1>
+        <p style="color: #666;">Monitor and manage platform accounts.</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline">Back to Panel</a>
+</div>
+
+<div class="card" style="padding: 0; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <th style="padding: 15px 20px;">User</th>
+                <th style="padding: 15px 20px;">Role</th>
+                <th style="padding: 15px 20px;">Status</th>
+                <th style="padding: 15px 20px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 15px 20px;">
+                    <div style="font-weight: 600;">{{ u.username }}</div>
+                    <small style="color: #999;">{{ u.email }}</small>
+                </td>
+                <td style="padding: 15px 20px;">
+                    <span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+                        {% if u.role == 'admin' %}background: #fee2e2; color: #991b1b;
+                        {% elif u.role == 'bakery' %}background: #e0f2fe; color: #075985;
+                        {% elif u.role == 'delivery' %}background: #fef3c7; color: #92400e;
+                        {% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                        {{ u.role }}
+                    </span>
+                </td>
+                <td style="padding: 15px 20px;">
+                    {% if u.is_active %}
+                    <span style="color: #059669; font-size: 14px;">🟢 Active</span>
+                    {% else %}
+                    <span style="color: #dc2626; font-size: 14px;">🔴 Blocked</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 15px 20px;">
+                    {% if u != request.user %}
+                    <a href="{% url 'toggle_user_status' u.id %}" class="btn"
+                        style="padding: 6px 15px; font-size: 12px; 
+                            {% if u.is_active %}background: #4b5563;{% else %}background: var(--secondary);{% endif %}">
+                        {% if u.is_active %}Block Access{% else %}Unblock{% endif %}
+                    </a>
+                    {% else %}
+                    <small style="color: #ccc;">(Self)</small>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

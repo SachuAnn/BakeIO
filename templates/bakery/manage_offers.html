@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Offers - BakeIO{% endblock %}
+
+{% block content %}
+<section class="dashboard-section" style="padding-top: 140px;">
+    <div class="container">
+        <!-- Back Link -->
+        <div style="margin-bottom: 30px;">
+            <a href="{% url 'bakery_dashboard' %}"
+                style="color: var(--secondary); text-transform: uppercase; letter-spacing: 2px; font-size: 11px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                ← Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Glass Card -->
+        <div class="card"
+            style="border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-medium);">
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                <div>
+                    <h1 style="font-size: 32px; margin: 0;">🏷 Manage Offers</h1>
+                    <p style="color: var(--text-muted); margin-top: 5px;">Create and manage special deals</p>
+                </div>
+                <a href="{% url 'add_offer' %}" class="btn" style="display: flex; align-items: center; gap: 8px;">
+                    <span>➕</span> Add Offer
+                </a>
+            </div>
+
+            {% if offers %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid #eee;">
+                            <th style="padding: 15px; font-weight: 600; color: var(--primary);">Title</th>
+                            <th style="padding: 15px; font-weight: 600; color: var(--primary);">Discount</th>
+                            <th style="padding: 15px; font-weight: 600; color: var(--primary);">Status</th>
+                            <th style="padding: 15px; font-weight: 600; color: var(--primary); text-align: right;">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offer in offers %}
+                        <tr style="border-bottom: 1px solid #f5f5f5; transition: background 0.2s;">
+                            <td style="padding: 15px; font-weight: 500;"><span>{{ offer.title }}</span></td>
+                            <td style="padding: 15px; font-family: monospace; font-size: 16px;">
+                                <span>{{offer.discount_percent}}</span>%</td>
+                            <td style="padding: 15px;">
+                                {% if offer.is_active %}
+                                <span
+                                    style="background: #e8f5e9; color: #4caf50; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">✅
+                                    Active</span>
+                                {% else %}
+                                <span
+                                    style="background: #ffebee; color: #f44336; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">❌
+                                    Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 15px; text-align: right;">
+                                <a href="{% url 'toggle_offer' offer.id %}" class="btn btn-outline"
+                                    style="font-size: 12px; padding: 6px 12px;">
+                                    {% if offer.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 60px 0;">
+                <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 20px;">🏷️</div>
+                <h3 style="color: var(--text-muted);">No active offers</h3>
+                <p style="color: #999; margin-bottom: 30px;">Attract more customers with special deals!</p>
+                <a href="{% url 'add_offer' %}" class="btn">Create First Offer</a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</section>
+{% endblock %}

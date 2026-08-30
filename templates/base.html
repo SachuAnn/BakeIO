@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BakeIO - Fine Artisan Bakes{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <!-- Global Video Background -->
+    <div class="global-bg-video"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden;">
+        <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
+            <source src="{% static 'assets/video/hero-bg.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+    <!-- Global White Overlay -->
+    <div class="global-bg-overlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: {% if request.resolver_match.url_name == 'landing' %}transparent{% else %}rgba(255, 255, 255, 0.7){% endif %}; transition: background 0.5s ease;">
+    </div>
+
+    <nav>
+        <div class="container nav-container">
+            <a href="/" class="logo">BAKEIO</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/explore/cakes/">Cakes</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'view_wishlist' %}">Wishlist</a>
+                <a href="/auth/dashboard/{{ user.role }}/">Dashboard</a>
+                <a href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'register' %}" class="btn">Start Now</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main style="min-height: 80vh;">
+        {% if messages %}
+        <div class="container" style="padding-top: 100px;">
+            {% for message in messages %}
+            <div
+                style="padding: 15px; margin-bottom: 20px; border-radius: 4px; background: var(--accent); color: var(--primary); border: 1px solid var(--border);">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <h2>BAKEIO</h2>
+            <p>Artisan Delights • Local Tradition • Modern Choice</p>
+            <div style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <p style="opacity: 0.5; font-size: 11px; letter-spacing: 1px;">&copy; 2026 BAKEIO STUDIOS. ALL RIGHTS
+                    RESERVED.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"
+        style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; pointer-events: none;">
+    </div>
+
+    <script>
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                padding: 12px 24px;
+                margin-top: 10px;
+                border-radius: 8px;
+                background: ${type === 'success' ? '#5D4333' : '#CE9D87'};
+                color: white;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+                font-size: 14px;
+                font-weight: 500;
+                transform: translateY(20px);
+                opacity: 0;
+                transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+                pointer-events: auto;
+            `;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+
+            // Trigger animation
+            setTimeout(() => {
+                toast.style.transform = 'translateY(0)';
+                toast.style.opacity = '1';
+            }, 10);
+
+            // Auto-remove
+            setTimeout(() => {
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+    </script>
+
+    {% include 'chat/chat_widget.html' %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

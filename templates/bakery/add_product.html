@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Cake - BakeIO{% endblock %}
+
+{% block content %}
+<section class="dashboard-section" style="padding-top: 140px;">
+    <div class="container" style="max-width: 800px;">
+        <!-- Back Link -->
+        <div style="margin-bottom: 30px;">
+            <a href="{% url 'manage_products' %}"
+                style="color: var(--secondary); text-transform: uppercase; letter-spacing: 2px; font-size: 11px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                ← Back to Products
+            </a>
+        </div>
+
+        <!-- Glass Card -->
+        <div class="card"
+            style="border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-medium);">
+
+            <div style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                <h1 style="font-size: 32px; margin: 0;">🍰 Add New Cake</h1>
+                <p style="color: var(--text-muted); margin-top: 5px;">Expand your menu with a new creation</p>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">Cake
+                        Name</label>
+                    <input type="text" name="name" required
+                        style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.8);">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label
+                            style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">Price
+                            (₹)</label>
+                        <input type="number" step="0.01" name="price" required
+                            style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.8);">
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">Applied
+                            Offer</label>
+                        <select name="offer"
+                            style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.8);">
+                            <option value="">No Offer</option>
+                            {% for offer in offers %}
+                            <option value="{{ offer.id }}">
+                                {{ offer.title }} ({{ offer.discount_percent }}%)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">Description</label>
+                    <textarea name="description" rows="4"
+                        style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.8); font-family: inherit;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--primary);">Cake
+                        Image</label>
+                    <div
+                        style="border: 2px dashed var(--border); padding: 20px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.5); cursor: pointer; position: relative;">
+                        <input type="file" name="image" accept="image/*" required
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                        <span style="font-size: 2rem;">🖼️</span>
+                        <p style="margin: 10px 0 0; color: #888;">Click or drag to upload an image</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <button type="submit" class="btn" style="flex: 1;">Create Cake</button>
+                    <a href="{% url 'manage_products' %}" class="btn btn-outline"
+                        style="flex: 1; text-align: center;">Cancel</a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

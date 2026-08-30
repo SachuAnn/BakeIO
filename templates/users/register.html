@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Join BAKEIO{% endblock %}
+
+{% block content %}
+<section class="auth-section" style="padding-top: 140px; min-height: 90vh;">
+    <div class="container" style="max-width: 500px;">
+        <div class="auth-header text-center mb-4" style="margin-bottom: 50px;">
+            <p
+                style="text-transform: uppercase; letter-spacing: 3px; font-size: 11px; color: var(--secondary); margin-bottom: 15px;">
+                Start Your Journey</p>
+            <h1 style="font-size: 48px;">Join BAKEIO</h1>
+        </div>
+
+        {% if error %}
+        <div
+            style="padding: 15px; background: var(--accent); color: var(--primary); border: 1px solid var(--border); margin-bottom: 30px; font-size: 13px; text-align: center;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="email" name="email" placeholder="Email" required>
+            </div>
+
+            <input type="password" name="password" placeholder="Create Password" required>
+
+            <div class="form-group">
+                <select name="role" required>
+                    <option value="">I am a...</option>
+                    <option value="customer">Customer / Dessert Lover</option>
+                    <option value="bakery">Bakery Owner</option>
+                </select>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: -15px; font-weight: 300;">Delivery
+                    partners must be manually registered by admin.</p>
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; margin-top: 30px;">Create Account</button>
+        </form>
+
+        <div class="text-center mt-4"
+            style="font-size: 13px; color: var(--text-muted); font-weight: 300; letter-spacing: 1px; margin-top: 40px;">
+            <p>Already joined? <a href="{% url 'login' %}"
+                    style="color: var(--primary); font-weight: 700; border-bottom: 1px solid var(--secondary);">Log
+                    In</a></p>
+        </div>
+    </div>
+</section>
+{% endblock %}

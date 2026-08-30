@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Method - BakeIO{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1>Select <span style="color: var(--primary);">Payment</span> Method 💳</h1>
+    <p style="color: #666;">Secure payment gateways</p>
+</div>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <form method="post" action="{% url 'checkout_payment' %}">
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+
+                <label class="payment-option"
+                    style="padding: 20px; border: 1px solid #eee; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 15px;">
+                    <input type="radio" name="payment_method" value="upi" checked>
+                    <span style="font-size: 24px;">📱</span>
+                    <div>
+                        <strong>UPI / 2026 Payment</strong>
+                        <p style="margin: 0; font-size: 12px; color: #888;">GPay, PhonePe, Paytm</p>
+                    </div>
+                </label>
+
+                <label class="payment-option"
+                    style="padding: 20px; border: 1px solid #eee; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 15px;">
+                    <input type="radio" name="payment_method" value="card">
+                    <span style="font-size: 24px;">💳</span>
+                    <div>
+                        <strong>Credit / Debit Card</strong>
+                        <p style="margin: 0; font-size: 12px; color: #888;">Visa, Mastercard, RuPay</p>
+                    </div>
+                </label>
+
+                <label class="payment-option"
+                    style="padding: 20px; border: 1px solid #eee; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 15px;">
+                    <input type="radio" name="payment_method" value="cod">
+                    <span style="font-size: 24px;">💵</span>
+                    <div>
+                        <strong>Cash on Delivery</strong>
+                        <p style="margin: 0; font-size: 12px; color: #888;">Pay when you receive</p>
+                    </div>
+                </label>
+
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #777;">
+                    <span>Subtotal:</span>
+                    <span>₹{{ original_total }}</span>
+                </div>
+                {% if savings > 0 %}
+                <div
+                    style="display: flex; justify-content: space-between; margin-bottom: 15px; color: var(--secondary); font-weight: 600;">
+                    <span>Applied Discounts:</span>
+                    <span>-₹{{ savings }}</span>
+                </div>
+                {% endif %}
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: baseline;">
+                    <span style="font-weight: 600;">Final Amount:</span>
+                    <strong style="font-size: 1.8rem; color: var(--primary);">₹{{ total }}</strong>
+                </div>
+                <button type="submit" class="btn"
+                    style="width: 100%; padding: 15px; font-weight: 600; font-size: 1.1rem;">
+                    Pay ₹{{ total }} & Place Order
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .payment-option:has(input:checked) {
+        border-color: var(--primary) !important;
+        background: #fff5f5;
+    }
+</style>
+{% endblock %}

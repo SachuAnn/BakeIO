@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - BAKEIO{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.wishlist-toggle').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            const heart = this.querySelector('.heart-icon');
+            const self = this;
+
+            fetch(`/wishlist/add/${id}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'added') {
+                        heart.innerText = '❤️';
+                    } else {
+                        heart.innerText = '♡';
+                    }
+                    showToast(data.message);
+                })
+                .catch(err => {
+                    console.error('Wishlist error:', err);
+                    showToast('Failed to update wishlist', 'error');
+                });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <div class="dashboard-header mb-4"
+            style="border-bottom: 1px solid var(--border); padding-bottom: 30px; margin-bottom: 50px;">
+            <p
+                style="text-transform: uppercase; letter-spacing: 2px; font-size: 11px; color: var(--secondary); margin-bottom: 10px;">
+                Customer Portal</p>
+            <h1 style="font-size: 48px;">Welcome back, {{ request.user.username }}</h1>
+            <p style="font-weight: 300; font-size: 16px; color: var(--text-muted); margin-top: 10px;">Your artisanal
+                journey continues here.</p>
+        </div>
+
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+            <!-- Main Actions -->
+            <a href="/explore/cakes/" class="card text-center">
+                <div style="font-size: 1.5rem; margin-bottom: 20px; color: var(--secondary);">COLLECTION</div>
+                <h3>Explore Cakes</h3>
+                <div style="width: 30px; height: 1px; background: var(--accent); margin: 15px auto;"></div>
+                <p
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 300; text-transform: uppercase; letter-spacing: 1px;">
+                    Browse local masterpieces</p>
+            </a>
+
+            <a href="{% url 'ai_generate' %}" class="card text-center" style="background-color: var(--accent);">
+                <div style="font-size: 1.5rem; margin-bottom: 20px; color: var(--primary);">INNOVATION</div>
+                <h3>AI Cake Designer</h3>
+                <div style="width: 30px; height: 1px; background: var(--primary); margin: 15px auto; opacity: 0.3;">
+                </div>
+                <p
+                    style="color: var(--primary); font-size: 13px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px;">
+                    Visualize your dream creation</p>
+            </a>
+
+            <a href="{% url 'taste_profile' %}" class="card text-center">
+                <div style="font-size: 1.5rem; margin-bottom: 20px; color: var(--secondary);">DNA</div>
+                <h3>Smart Taste Profile</h3>
+                <div style="width: 30px; height: 1px; background: var(--accent); margin: 15px auto;"></div>
+                <p
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 300; text-transform: uppercase; letter-spacing: 1px;">
+                    Discover your flavor palette</p>
+            </a>
+
+            <a href="{% url 'price_predictor' %}" class="card text-center">
+                <div style="font-size: 1.5rem; margin-bottom: 20px; color: var(--secondary);">VALUE</div>
+                <h3>Price Predictor</h3>
+                <div style="width: 30px; height: 1px; background: var(--accent); margin: 15px auto;"></div>
+                <p
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 300; text-transform: uppercase; letter-spacing: 1px;">
+                    Accurate market estimates</p>
+            </a>
+
+            <!-- BakeBot Card Removed -->
+
+            <a href="/chat/rooms/" class="card text-center" style="background-color: var(--primary); color: #fff;">
+                <div style="font-size: 1.5rem; margin-bottom: 20px; color: var(--secondary);">SUPPORT</div>
+                <h3 style="color: #fff;">Bakery Chats</h3>
+                <div style="width: 30px; height: 1px; background: #fff; margin: 15px auto; opacity: 0.2;"></div>
+                <p
+                    style="color: #fff; opacity: 0.7; font-size: 13px; font-weight: 300; text-transform: uppercase; letter-spacing: 1px;">
+                    Direct support from bakers</p>
+            </a>
+        </div>
+
+        {% if trending_products %}
+        <div style="margin-top: 60px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+                <div>
+                    <p
+                        style="text-transform: uppercase; letter-spacing: 2px; font-size: 11px; color: var(--secondary); margin-bottom: 5px;">
+                        Community Favorites</p>
+                    <h3 style="font-size: 32px; margin: 0;">Trending <span
+                            style="color: var(--primary);">Delights</span> 🍰</h3>
+                </div>
+                <a href="/explore/cakes/"
+                    style="color: var(--secondary); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">View
+                    All →</a>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                {% for product in trending_products %}
+                <div class="card"
+                    style="display: flex; gap: 20px; align-items: center; padding: 20px; transition: transform 0.3s ease;">
+                    <div style="width: 80px; height: 80px; flex-shrink: 0; overflow: hidden; border-radius: 8px;">
+                        <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'assets/images/placeholder-cake.jpg' %}{% endif %}"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex: 1;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                            <h4 style="font-size: 16px; margin: 0;">
+                                {{ product.name }}
+                            </h4>
+                            <div style="text-align: right;">
+                                {% if product.offer and product.offer.is_active %}
+                                <div style="color: var(--secondary); font-weight: 700; font-size: 14px;">
+                                    ₹{{ product.discounted_price }}
+                                </div>
+                                <del style="color: #ccc; font-size: 10px;">
+                                    ₹{{ product.price }}
+                                </del>
+                                {% else %}
+                                <span style="color: var(--primary); font-weight: 700; font-size: 14px;">
+                                    ₹{{ product.price }}
+                                </span>
+                                {% endif %}
+                                <div style="margin-top: 5px;">
+                                    <a href="javascript:void(0)" class="wishlist-toggle" data-id="{{ product.id }}"
+                                        style="text-decoration: none; color: var(--primary); font-size: 16px;"
+                                        title="Wishlist">
+                                        <span class="heart-icon">
+                                            {% if product.id in wishlisted_product_ids %}❤️{% else %}♡{% endif %}
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <p
+                            style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {{ product.description }}
+                        </p>
+                        <a href="{% url 'cake_detail' product.id %}"
+                            style="color: var(--secondary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                            Details →
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="grid mt-4" style="grid-template-columns: 2fr 1fr; gap: 40px; margin-top: 60px;">
+            <!-- History / Management -->
+            <div class="card" style="border: none; background: transparent; padding: 0;">
+                <h3 style="font-size: 28px; margin-bottom: 30px;">Account Management</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <a href="/orders/" class="btn btn-outline" style="letter-spacing: 2px;">My Orders</a>
+                    <a href="/cart/" class="btn btn-outline" style="letter-spacing: 2px;">Shopping Cart</a>
+                    <a href="/wishlist/" class="btn btn-outline" style="letter-spacing: 2px;">Wishlist</a>
+                    <a href="/payments/" class="btn btn-outline" style="letter-spacing: 2px;">Payments</a>
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="card" style="border-radius: 0; background-color: var(--surface);">
+                <h3
+                    style="font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px;">
+                    Updates ({{ unread_count }})
+                </h3>
+                <ul style="list-style: none; padding: 0;">
+                    {% for n in notifications %}
+                    <li
+                        style="padding: 15px 0; border-bottom: 1px solid var(--bg-warm); font-size: 14px; font-weight: 300;">
+                        {{ n.message }}
+                        {% if not n.is_read %} <span
+                            style="display: inline-block; width: 6px; height: 6px; background: var(--secondary); border-radius: 50%; margin-left: 8px;"></span>
+                        {% endif %}
+                    </li>
+                    {% empty %}
+                    <li style="padding: 20px 0; color: var(--text-muted); font-weight: 300; font-style: italic;">No new
+                        notifications</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // 📍 Real-time Customer Location Tracking (Zomato Style)
+    if ("geolocation" in navigator) {
+        console.log("📍 Initializing Customer Tracking...");
+
+        const syncLocation = (position) => {
+            const data = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+
+            fetch("{% url 'update_location' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(json => console.log("✅ Customer Location Synced:", json))
+                .catch(err => console.warn("❌ Sync failed:", err));
+        };
+
+        navigator.geolocation.watchPosition(syncLocation, (err) => {
+            console.warn("📍 Tracking suppressed:", err.message);
+        }, {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 5000
+        });
+    }
+</script>
+{% endblock %}

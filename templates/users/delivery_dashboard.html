@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+
+{% block title %}Delivery - BakeIO Fleet{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4" style="display: flex; justify-content: space-between; align-items: flex-end;">
+  <div>
+    <h1>Fleet Dashboard 🚚</h1>
+    <p style="color: #666;">Status:
+      {% if request.user.is_available %}
+      <span style="color: var(--secondary); font-weight: bold;">🟢 Online & Receiving Orders</span>
+      {% else %}
+      <span style="color: #999; font-weight: bold;">📴 Offline</span>
+      {% endif %}
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <button onclick="shareLocation()" class="btn"
+      style="background: var(--primary); color: white; min-width: 150px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      📍 Share Live Location
+    </button>
+    <form method="post" action="{% url 'toggle_availability' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn {% if request.user.is_available %}btn-outline{% else %}btn-secondary{% endif %}"
+        style="min-width: 150px;">
+        {% if request.user.is_available %}Go Offline{% else %}Go Online{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function shareLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    const btn = document.querySelector('button[onclick="shareLocation()"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ Updating...";
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      try {
+        const response = await fetch('/auth/api/update_location/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ latitude: lat, longitude: lng })
+        });
+
+        if (response.ok) {
+          btn.innerHTML = "✅ Synced";
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          throw new Error('Failed to update');
+        }
+      } catch (error) {
+        console.error(error);
+        btn.innerHTML = "❌ Error";
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }, 3000);
+      }
+    }, () => {
+      alert("Unable to retrieve your location");
+    });
+  }
+</script>
+
+<div class="grid" style="grid-template-columns: 2fr 1fr; gap: 30px;">
+  <!-- Active Tasks -->
+  <div>
+    <h3 class="mb-4">📦 Active Assignments</h3>
+    {% for a in assignments %}
+    {% if a.status != 'delivered' %}
+    <div class="card mb-4" style="border-left: 5px solid var(--secondary);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.2rem;">Order #{{ a.order.id }}</h4>
+          <p style="color: #666; font-size: 14px;"><strong>From:</strong> {{ a.order.bakery.name }}</p>
+          <p style="color: #666; font-size: 14px;"><strong>To:</strong> {{ a.order.delivery_address.full_name }}</p>
+          <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 13px;">
+            <p style="margin: 0; font-weight: 600;">{{ a.order.delivery_address.street_address }}</p>
+            <p style="margin: 2px 0 0 0; color: #666;">{{ a.order.delivery_address.city }}</p>
+          </div>
+
+          <!-- Enhanced Customer Contact Section -->
+          <div
+            style="margin-top: 10px; padding: 12px; background: linear-gradient(135deg, #e6f7ff, #f0f9ff); border-left: 4px solid var(--primary); border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <p
+              style="margin: 0; font-size: 11px; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+              Customer Contact</p>
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 10px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 150px;">
+                <p style="margin: 0; font-weight: 600; color: var(--dark); font-size: 14px;">
+                  {{ a.order.customer.username }}
+                </p>
+                <p style="margin: 3px 0 0 0; font-size: 15px; color: var(--primary); font-weight: 600;">
+                  📞 {{ a.order.delivery_address.phone_number }}
+                </p>
+              </div>
+              <a href="tel:{{ a.order.delivery_address.phone_number }}" class="btn"
+                style="padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; border-radius: 6px; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); transition: all 0.3s;">
+                📞 Call Now
+              </a>
+            </div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <span
+            style="display: inline-block; padding: 4px 12px; border-radius: 20px; background: #e6fffa; color: var(--secondary); font-size: 12px; font-weight: bold;">
+            {{ a.status|upper }}
+          </span>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <form method="post" action="{% url 'delivery_update_status' a.order.id %}" style="width: 100%;">
+          {% csrf_token %}
+          {% if a.status == 'assigned' %}
+          <input type="hidden" name="status" value="picked">
+          <button class="btn btn-secondary" style="width: 100%;">Confirm Pickup 📦</button>
+          {% elif a.status == 'picked' %}
+          <input type="hidden" name="status" value="out_for_delivery">
+          <button class="btn btn-secondary" style="width: 100%;">Start Delivery 🏍️</button>
+          {% elif a.status == 'out_for_delivery' %}
+          <input type="hidden" name="status" value="delivered">
+          <button class="btn" style="width: 100%; background-color: var(--secondary);">Mark Delivered ✅</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    {% empty %}
+    <div class="card text-center" style="padding: 60px;">
+      <p style="color: #999;">No active assignments. Make sure you are online!</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Stats & History -->
+  <div>
+    <div class="card mb-4">
+      <h4>🔔 Notifications ({{ unread_count }})</h4>
+      <ul style="list-style: none; margin-top: 15px; padding: 0;">
+        {% for n in notifications %}
+        <li style="padding: 10px; border-bottom: 1px solid #eee; font-size: 13px;">
+          {{ n.message }}
+        </li>
+        {% empty %}
+        <li style="padding: 10px; color: #999; font-size: 13px;">None</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>📜 Today's Deliveries</h4>
+      <ul style="list-style: none; margin-top: 15px; padding: 0;">
+        {% for a in assignments %}
+        {% if a.status == 'delivered' %}
+        <li style="padding: 10px; border-bottom: 1px solid #eee; font-size: 13px;">
+          <strong>Order #{{ a.order.id }}</strong> - {{ a.assigned_at|date:"H:i" }}
+        </li>
+        {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- 🏍️ Real-time Delivery Map -->
+  <div class="card" style="margin-top: 20px; padding: 25px; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="margin: 0;">🧭 Your Delivery Map</h3>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button onclick="recenterMap()"
+          style="background: #fff; border: 1px solid #ccc; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+          🎯 Recenter
+        </button>
+        <span id="map-status"
+          style="font-size: 11px; background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px;">Live
+          Navigation Active</span>
+      </div>
+    </div>
+
+    <div id="delivery-map" style="height: 480px; width: 100%; border-radius: 12px; z-index: 1; border: 1px solid #eee;">
+    </div>
+
+    <!-- Data points for JavaScript -->
+    <div id="map-data" style="display:none;">
+      {% for assignment in assignments %}
+      {% if assignment.status != 'delivered' %}
+      <div class="assignment-point" data-type="bakery" data-lat="{{ assignment.order.bakery.latitude }}"
+        data-lng="{{ assignment.order.bakery.longitude }}" data-name="{{ assignment.order.bakery.name }}"></div>
+      <div class="assignment-point" data-type="customer"
+        data-lat="{{ assignment.order.delivery_address.latitude|default:12.9716 }}"
+        data-lng="{{ assignment.order.delivery_address.longitude|default:77.5946 }}"
+        data-name="{{ assignment.order.delivery_address.full_name }}"></div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div style="margin-top: 15px; display: flex; gap: 20px; font-size: 13px; color: #666;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <img src="https://cdn-icons-png.flaticon.com/512/992/992747.png" style="width: 16px;"> Bakery
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <img src="https://cdn-icons-png.flaticon.com/512/619/619153.png" style="width: 16px;"> Customer
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <img src="https://cdn-icons-png.flaticon.com/512/3063/3063823.png" style="width: 20px;"> You
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <script>
+    let deliveryMap;
+    let riderMarker;
+    let lastLat = 12.9716;
+    let lastLng = 77.5946;
+
+    const bakeryIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/992/992747.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
+
+    const homeIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/619/619153.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
+
+    const riderIconMap = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063823.png',
+      iconSize: [44, 44],
+      iconAnchor: [22, 44]
+    });
+
+    const initMap = () => {
+      console.log("🗺️ Initializing Zomato-style Map...");
+      deliveryMap = L.map('delivery-map', { zoomControl: false }).setView([lastLat, lastLng], 14);
+      L.control.zoom({ position: 'bottomright' }).addTo(deliveryMap);
+
+      // Premium variant: CartoDB Positron
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      }).addTo(deliveryMap);
+
+      const points = [];
+
+      document.querySelectorAll('.assignment-point').forEach(point => {
+        const pLat = parseFloat(point.dataset.lat);
+        const pLng = parseFloat(point.dataset.lng);
+        const type = point.dataset.type;
+        const name = point.dataset.name;
+
+        if (!isNaN(pLat) && !isNaN(pLng)) {
+          const latlng = [pLat, pLng];
+          points.push(latlng);
+          L.marker(latlng, { icon: type === 'bakery' ? bakeryIcon : homeIcon })
+            .addTo(deliveryMap)
+            .bindPopup(`<b>${type === 'bakery' ? 'Pickup' : 'Deliver to'}: ${name}</b>`);
+        }
+      });
+
+      if (points.length > 0) {
+        const bounds = L.latLngBounds(points);
+        deliveryMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+      }
+
+      riderMarker = L.marker([lastLat, lastLng], {
+        icon: riderIconMap,
+        opacity: 0.6,
+        zIndexOffset: 1000
+      }).addTo(deliveryMap).bindPopup("<b>Acquiring GPS Signal...</b>");
+    };
+
+    const updateRiderMarker = (lat, lng) => {
+      if (!deliveryMap) return;
+      lastLat = lat;
+      lastLng = lng;
+      riderMarker.setLatLng([lat, lng]);
+      riderMarker.setOpacity(1.0);
+      riderMarker.setPopupContent("<b>You are here</b>");
+    };
+
+    const recenterMap = () => {
+      if (deliveryMap) {
+        deliveryMap.setView([lastLat, lastLng], 16);
+      }
+    };
+
+    const syncLocation = async (lat, lng) => {
+      const data = { latitude: lat, longitude: lng };
+      updateRiderMarker(lat, lng);
+
+      try {
+        const response = await fetch("{% url 'update_location' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          console.log("✅ Rider position synced with server");
+          document.getElementById('map-status').style.background = "#e8f5e9";
+          document.getElementById('map-status').innerText = "Live Navigation Active";
+        } else {
+          throw new Error("Server rejected sync");
+        }
+      } catch (err) {
+        console.error("❌ Sync Fail:", err);
+        document.getElementById('map-status').style.background = "#ffebee";
+        document.getElementById('map-status').innerText = "Syncing Issue...";
+      }
+    };
+
+    function shareLocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+      }
+
+      const btn = document.querySelector('button[onclick="shareLocation()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "⏳ Syncing...";
+      btn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        await syncLocation(position.coords.latitude, position.coords.longitude);
+        btn.innerHTML = "✅ Synced";
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }, 2000);
+      }, (error) => {
+        console.error(error);
+        alert("GPS Error: " + error.message);
+        btn.innerHTML = "❌ Error";
+        btn.disabled = false;
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+        }, 3000);
+      });
+    }
+
+    // 🚀 Start Map Immediately
+    initMap();
+
+    // 📍 Continuous Tracking if available
+    const riderAvailable = ("{{ request.user.is_available }}" === "True");
+
+    if ("geolocation" in navigator && riderAvailable) {
+      navigator.geolocation.watchPosition(
+        (position) => syncLocation(position.coords.latitude, position.coords.longitude),
+        (error) => {
+          console.warn("📍 GPS Signal Weak:", error.message);
+          document.getElementById('map-status').innerText = "Searching for GPS...";
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+    } else if (!riderAvailable) {
+      riderMarker.setPopupContent("<b>You are Offline</b>");
+    }
+  </script>
+  {% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="text-align: center; margin: 40px auto;">
+    <h1>🎉 We Found Your Perfect Match!</h1>
+    <p>Based on your <strong>{{ profile.get_favorite_flavor_display }}</strong> preference.</p>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 30px;">
+        {% for product in products %}
+        <div
+            style="border: 1px solid #eee; padding: 15px; border-radius: 10px; width: 250px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            {% if product.image %}
+            <img src="{{ product.image.url }}"
+                style="width: 100%; height: 180px; object-fit: cover; border-radius: 5px;">
+            {% else %}
+            <div
+                style="width: 100%; height: 180px; background: #eee; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                No Image</div>
+            {% endif %}
+            <h3>{{ product.name }}</h3>
+            <p style="color: green; font-weight: bold;">${{ product.price }}</p>
+            <a href="#" class="btn" style="background-color: #00b894; color: white;">Add to Cart</a>
+        </div>
+        {% empty %}
+        <p>No specific matches found, but check out our best sellers!</p>
+        {% endfor %}
+    </div>
+
+    <br><br>
+    <a href="{% url 'taste_profile' %}" style="color: gray; text-decoration: underline;">Retake Quiz</a>
+</div>
+{% endblock %}

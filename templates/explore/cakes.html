@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Explore Artisan Cakes - BAKEIO{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.wishlist-toggle').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            const heart = this.querySelector('.heart-icon');
+            const self = this;
+
+            fetch(`/wishlist/add/${id}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'added') {
+                        heart.innerText = '❤️';
+                        self.title = 'Remove from Wishlist';
+                    } else {
+                        heart.innerText = '♡';
+                        self.title = 'Add to Wishlist';
+                    }
+                    showToast(data.message);
+                })
+                .catch(err => {
+                    console.error('Wishlist error:', err);
+                    showToast('Failed to update wishlist', 'error');
+                });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="explorer-header" style="padding-top: 140px; background-color: var(--surface);">
+    <div class="container text-center">
+        <p
+            style="text-transform: uppercase; letter-spacing: 4px; font-size: 11px; color: var(--secondary); margin-bottom: 20px;">
+            The Collection</p>
+        <h1 style="font-size: 56px; margin-bottom: 40px;">Artisan Masterpieces</h1>
+
+        <form method="get"
+            style="max-width: 600px; margin: 0 auto; display: flex; gap: 0; border-bottom: 1px solid var(--primary);">
+            <input type="text" name="q" placeholder="Search by name or flavor..." value="{{ query }}"
+                style="border: none; margin-bottom: 0; flex: 1; padding: 15px 0;">
+            <button type="submit" style="background: none; border: none; cursor: pointer; padding: 0 15px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
+        </form>
+    </div>
+</section>
+
+<section class="explorer-grid" style="padding: 60px 0 100px;">
+    <div class="container">
+        <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 40px;">
+            {% for cake in cakes %}
+            <div class="product-card"
+                style="border: 1px solid var(--border); background-color: var(--surface); transition: var(--transition);">
+                <a href="{% url 'cake_detail' cake.id %}" style="display: block;">
+                    <div style="aspect-ratio: 1/1; background: var(--bg-warm); position: relative; overflow: hidden;">
+                        {% if cake.image %}
+                        <img src="{{ cake.image.url }}"
+                            style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease;">
+                        {% else %}
+                        <div
+                            style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); opacity: 0.3;">
+                            <span style="font-size: 4rem;">🧁</span>
+                        </div>
+                        {% endif %}
+
+                        <div style="position: absolute; top: 20px; right: 20px;">
+                            <a href="javascript:void(0)" class="wishlist-toggle" data-id="{{ cake.id }}"
+                                style="background: var(--surface); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: var(--shadow-subtle); color: var(--primary); font-size: 20px; text-decoration: none;"
+                                title="{% if cake.id in wishlisted_product_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}">
+                                <span class="heart-icon">
+                                    {% if cake.id in wishlisted_product_ids %}❤️{% else %}♡{% endif %}
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </a>
+
+                <div style="padding: 30px; text-align: center;">
+                    <p
+                        style="text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: var(--secondary); margin-bottom: 10px;">
+                        {{ cake.bakery.name }}</p>
+                    <h3 style="margin-bottom: 10px;">
+                        <a href="{% url 'cake_detail' cake.id %}" style="font-size: 22px;">{{ cake.name }}</a>
+                    </h3>
+                    <p style="font-weight: 400; color: var(--primary); font-size: 18px; margin-bottom: 25px;">
+                        ₹<span>{{ cake.price }}</span>
+                    </p>
+
+                    <form action="{% url 'add_to_cart' cake.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline" style="width: 100%; border-radius: 0;">Add to
+                            Tray</button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1/-1; padding: 100px 0; text-align: center; border: 1px dashed var(--border);">
+                <p style="color: var(--text-muted); font-size: 18px; font-weight: 300;">No items found matching your
+                    search.</p>
+                <a href="/explore/cakes/" class="btn btn-secondary mt-4">View All</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+    .product-card:hover img {
+        transform: scale(1.05);
+    }
+
+    .product-card:hover {
+        border-color: var(--secondary);
+        box-shadow: var(--shadow-medium);
+    }
+</style>
+{% endblock %}

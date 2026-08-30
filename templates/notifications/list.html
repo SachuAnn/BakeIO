@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - BakeIO{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;" class="mb-4">
+    <h1>Your <span style="color: var(--primary);">Notifications</span> 🔔</h1>
+    <a href="{% url 'mark_notifications_read' %}" class="btn btn-outline"
+        style="padding: 8px 20px; font-size: 13px;">Mark all as Read</a>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="display: flex; flex-direction: column;">
+        {% for note in notifications %}
+        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; gap: 20px; align-items: flex-start;
+                    {% if not note.is_read %}background: #fffafa;{% endif %}">
+            <div style="font-size: 1.5rem;">
+                {% if 'order' in note.message.lower %}📦
+                {% elif 'delivery' in note.message.lower %}🚚
+                {% else %}🔔
+                {% endif %}
+            </div>
+            <div style="flex: 1;">
+                <p
+                    style="margin: 0; {% if not note.is_read %}font-weight: 600; color: var(--dark);{% else %}color: #666;{% endif %}">
+                    {{ note.message }}
+                </p>
+                <small style="color: #999; margin-top: 5px; display: block;">{{ note.created_at|timesince }} ago</small>
+            </div>
+            {% if not note.is_read %}
+            <div style="width: 10px; height: 10px; background: var(--primary); border-radius: 50%; margin-top: 8px;">
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div style="padding: 60px; text-align: center;">
+            <p style="color: #999;">No notifications yet. You're all caught up!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/auth/dashboard/customer/" style="color: #999;">← Back to Dashboard</a>
+</div>
+{% endblock %}

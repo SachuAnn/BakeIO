@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Products - BakeIO{% endblock %}
+
+{% block content %}
+<section class="dashboard-section" style="padding-top: 140px;">
+    <div class="container">
+        <!-- Back Link -->
+        <div style="margin-bottom: 30px;">
+            <a href="{% url 'bakery_dashboard' %}"
+                style="color: var(--secondary); text-transform: uppercase; letter-spacing: 2px; font-size: 11px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                ← Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Glass Card -->
+        <div class="card"
+            style="border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-medium);">
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                <div>
+                    <h1 style="font-size: 32px; margin: 0;">🍰 My Menu</h1>
+                    <p style="color: var(--text-muted); margin-top: 5px;">Manage your bakery's offerings</p>
+                </div>
+                <a href="{% url 'add_product' %}" class="btn" style="display: flex; align-items: center; gap: 8px;">
+                    <span>➕</span> Add New Cake
+                </a>
+            </div>
+
+            {% if products %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                {% for product in products %}
+                <div
+                    style="border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: white; transition: var(--transition); display: flex; flex-direction: column;">
+
+                    <div style="aspect-ratio: 16/9; background: #f9f9f9; position: relative;">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                        <div
+                            style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; opacity: 0.3;">
+                            🍰</div>
+                        {% endif %}
+
+                        <div
+                            style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 13px; color: var(--primary);">
+                            ₹{{ product.price }}
+                        </div>
+                    </div>
+
+                    <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
+                        <h3 style="font-size: 18px; margin-bottom: 5px;">{{ product.name }}</h3>
+                        <p style="color: #888; font-size: 13px; margin-bottom: 15px; flex: 1;">
+                            {{ product.description|truncatechars:60|default:"No description" }}
+                        </p>
+
+                        <div style="display: flex; gap: 10px; margin-top: auto;">
+                            <a href="{% url 'edit_product' product.id %}" class="btn btn-outline"
+                                style="flex: 1; padding: 8px; font-size: 13px; display: inline-block; text-decoration: none; text-align: center;">
+                                ✏ Edit
+                            </a>
+                            <a href="{% url 'delete_product' product.id %}"
+                                onclick="return confirm('Delete this product?');" class="btn btn-outline"
+                                style="padding: 8px; font-size: 13px; border-color: #ffcdd2; color: #ef5350; display: inline-block; text-decoration: none; text-align: center;">
+                                🗑
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 60px 0;">
+                <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 20px;">🎂</div>
+                <h3 style="color: var(--text-muted);">No products yet</h3>
+                <p style="color: #999; margin-bottom: 30px;">Start adding cakes to your menu!</p>
+                <a href="{% url 'add_product' %}" class="btn">Create First Product</a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</section>
+{% endblock %}

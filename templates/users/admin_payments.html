@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments - BakeIO Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>Revenue <span style="color: var(--secondary);">Management</span> 💳</h1>
+        <p style="color: #666;">Global payment logs and financial records.</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline">Back to Panel</a>
+</div>
+
+<div class="card" style="padding: 0; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <th style="padding: 15px 20px;">Order</th>
+                <th style="padding: 15px 20px;">Amount</th>
+                <th style="padding: 15px 20px;">Method</th>
+                <th style="padding: 15px 20px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 15px 20px; font-weight: 700;">#{{ p.order.id }}</td>
+                <td style="padding: 15px 20px; font-weight: 700; color: var(--secondary);">₹{{ p.amount }}</td>
+                <td style="padding: 15px 20px; color: #666;">{{ p.method }}</td>
+                <td style="padding: 15px 20px;">
+                    <span
+                        style="font-weight: 600; {% if p.status == 'paid' %}color: #059669;{% else %}color: #dc2626;{% endif %}">
+                        {{ p.status|upper }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 40px; text-align: center; color: #999;">No payment records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

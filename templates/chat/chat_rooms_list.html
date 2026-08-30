@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Messages - BakeIO{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1>Your <span style="color: var(--primary);">Messages</span> 💬</h1>
+    <p style="color: #666;">Keep track of your conversations.</p>
+</div>
+
+<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+    {% for room in rooms %}
+    <a href="{% url 'chat_room' room.id %}" class="card" style="display: flex; align-items: center; gap: 20px;">
+        <div
+            style="width: 60px; height: 60px; background: #f0f0f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px;">
+            {% if user.role == 'customer' %}🏪{% else %}👤{% endif %}
+        </div>
+        <div style="flex: 1;">
+            <h3 style="margin: 0; font-size: 1.2rem;">
+                {% if user.role == 'customer' %}
+                {{ room.bakery.name }}
+                {% else %}
+                {{ room.customer.username }}
+                {% endif %}
+            </h3>
+            <p style="color: #888; font-size: 13px;">Started on {{ room.created_at|date:"M d, Y" }}</p>
+        </div>
+        <div style="color: var(--primary); font-size: 20px;">→</div>
+    </a>
+    {% empty %}
+    <div style="grid-column: 1/-1;" class="text-center card">
+        <p style="color: #999;">No active conversations yet.</p>
+        {% if user.role == 'customer' %}
+        <a href="/bakeries/" class="btn mt-4">Find a Bakery</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div style="margin-top: 40px;">
+    {% if user.role == 'customer' %}
+    <a href="/auth/dashboard/customer/" style="color: #999;">← Back to Dashboard</a>
+    {% else %}
+    <a href="/auth/dashboard/bakery/" style="color: #999;">← Back to Dashboard</a>
+    {% endif %}
+</div>
+{% endblock %}

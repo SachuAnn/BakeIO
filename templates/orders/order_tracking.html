@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Track Order #{{ order.id }} - BakeIO{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+        border-radius: 12px;
+        z-index: 0;
+    }
+
+    .tracking-info {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1>
+        Track Order <span style="color: var(--primary);">#{{ order.id }}</span> 📍
+    </h1>
+    <p style="color: #666;">Real-time delivery updates</p>
+</div>
+
+<div class="tracking-info">
+    <div>
+        <h3 style="margin: 0;">
+            Status:
+            <span style="color: var(--secondary);">
+                {{ order.status|title }}
+            </span>
+        </h3>
+
+        <p style="margin: 5px 0 0 0; color: #888;">
+            {% if order.delivery_assignment %}
+            Rider:
+            <strong>{{ order.delivery_assignment.delivery_person.username }}</strong>
+            {% else %}
+            Finding a rider...
+            {% endif %}
+        </p>
+    </div>
+
+    <div style="text-align: right;">
+        <p style="margin: 0;"><strong>ETA:</strong> {{ eta_range }} mins</p>
+        {% if order.estimated_delivery_time %}
+        <p style="margin: 5px 0 0; font-size: 14px; color: var(--secondary); font-weight: 600;">
+            🕒 Arriving by {{ order.estimated_delivery_time|date:"h:i A" }}
+        </p>
+        {% endif %}
+        <p style="margin: 0; font-size: 11px; color: #888;">Distance: {{ distance_km }} km</p>
+        <a href="/orders/" class="btn btn-sm btn-outline" style="margin-top: 5px;">
+            Back to Orders
+        </a>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // ✅ Safe coordinates coming from view
+    const bakeryLat = {{ bakery_lat }};
+    const bakeryLng = {{ bakery_lng }};
+
+    const customerLat = {{ customer_lat }};
+    const customerLng = {{ customer_lng }};
+
+    // Rider location (only if assigned)
+    let riderLat = null;
+    let riderLng = null;
+
+    {% if rider_lat and rider_lng %}
+    riderLat = {{ rider_lat }};
+    riderLng = {{ rider_lng }};
+    {% endif %}
+
+    // Initialize Map
+    const map = L.map('map').setView([bakeryLat, bakeryLng], 13);
+
+    // OpenStreetMap Tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Icons
+    const bakeryIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/992/992747.png',
+        iconSize: [38, 38]
+    });
+
+    const homeIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/619/619153.png',
+        iconSize: [38, 38]
+    });
+
+    const riderIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063823.png',
+        iconSize: [45, 45]
+    });
+
+    // --- MARKERS ---
+    let bakeryMarker = L.marker([bakeryLat, bakeryLng], { icon: bakeryIcon })
+        .addTo(map)
+        .bindPopup("<b>{{ order.bakery.name }}</b><br>Preparation Hub");
+
+    let customerMarker = L.marker([customerLat, customerLng], { icon: homeIcon })
+        .addTo(map)
+        .bindPopup("<b>Your Address</b><br>{{ order.delivery_address.street_address }}");
+
+    let riderMarker = null;
+    if (riderLat && riderLng) {
+        riderMarker = L.marker([riderLat, riderLng], { icon: riderIcon })
+            .addTo(map)
+            .bindPopup("<b>Rider</b><br>On the way 🚴");
+    }
+
+    // --- LIVE POLLING ---
+    const updateTracking = () => {
+        fetch("{% url 'api_get_order_location' order.id %}")
+            .then(res => res.json())
+            .then(data => {
+                console.log("📍 Live Multi-Point Update:", data);
+
+                // 🏠 Update Bakery
+                if (data.bakery && data.bakery.lat) {
+                    bakeryMarker.setLatLng([data.bakery.lat, data.bakery.lng]);
+                }
+
+                // 👨‍💼 Update Customer
+                if (data.customer && data.customer.lat) {
+                    customerMarker.setLatLng([data.customer.lat, data.customer.lng]);
+                }
+
+                // 🚴 Update Rider
+                if (data.rider && data.rider.lat) {
+                    const riderPos = [data.rider.lat, data.rider.lng];
+                    if (riderMarker) {
+                        riderMarker.setLatLng(riderPos);
+                    } else {
+                        riderMarker = L.marker(riderPos, { icon: riderIcon })
+                            .addTo(map)
+                            .bindPopup("<b>Rider</b><br>On the way 🚴");
+                    }
+                }
+
+                // Update polyline occasionally if distance changes significantly (optional)
+                // polyline.setLatLngs([[bakeryMarker.getLatLng(), customerMarker.getLatLng()]]);
+            })
+            .catch(err => console.error("❌ Polling failed:", err));
+    };
+
+    // Poll every 5 seconds for synchronized tracking
+    setInterval(updateTracking, 5000);
+</script>
+
+{% endblock %}
